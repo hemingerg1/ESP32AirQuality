@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">    
+    <title>Garage Monitor</title>
+    <link rel="icon" type="image/x-icon" href="static/images/favicon.png">
+    <link rel="stylesheet" href="static/css/index.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
+    
+    <script src="https://cdn.plot.ly/plotly-2.16.1.min.js"></script>
+    <script src="static/js/warning_coloring.js"></script>
+    <script src="static/js/home.js"></script>
+
+</head>
+
+<body>
+<div class="sidebar">
+  <a href="/">Home</a>
+  <a href="/sensors">All Sensors</a>
+  <a href="/dash">Network Dashboard</a>
+  <a href="/cam">Cameras</a>
+  <a href="/clock">Clock</a>
+
+  <div id="side_mem">
+    <label id="mem_meter_label" for="mem_meter"></label><br>
+    <meter id="mem_meter" min=0 max=1 high=0.75></meter>
+  </div>
+</div>
+
+<div class="content">
+
+  <div class="flex_current">
+     <div class="flex_box">
+       <div class="box-topic">Temperature</div>
+       <div class="number" id="temp"></div>
+     </div>
+     <div class="flex_box">
+       <div class="box-topic">Humidity</div>
+       <div class="number" id="hum"></div>
+     </div>    
+     <div class="flex_box">
+       <div class="box-topic">Air Quality</div>
+       <div class="number aq" id="aq"></div>
+     </div>
+     <div class="flex_box">
+       <div class="box-topic">PM 2.5</div>
+       <div class="number pm25" id="pm25"></div>
+     </div>
+     <div class="flex_box">
+       <div class="box-topic">PM 10</div>
+       <div class="number pm100" id="pm100"></div>
+     </div>
+   </div>
+
+   <div class='flex_charts'>
+      <div class="chart_column">
+        <div id="temp_chart" class="chart">Temperature</div>
+        <div id="aq_chart" class="chart">Air Quality</div>
+      </div>
+      <div class="chart_column">
+        <div id="hum_chart" class="chart">Humidity</div>
+        <div id="pm_chart" class="chart">PM</div>
+      </div>
+   </div>
+
+</body>
+</html>
