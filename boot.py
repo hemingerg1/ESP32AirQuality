@@ -1,10 +1,11 @@
 import network
+import secrets
 
 ap = network.WLAN(network.AP_IF)
 ap.active(False)
 
-SSID = <SSID HERE>
-SSI_PASSWORD = <PASSWORD HERE>
+SSID = secrets.wifi_ssid
+SSI_PASSWORD = secrets.wifi_password
 
 def do_connect():
     sta_if = network.WLAN(network.STA_IF)
