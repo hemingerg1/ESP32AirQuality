@@ -80,19 +80,19 @@ async def get_data(max_hist_length=30):
 
 @app.route('/')
 async def home_pg(request):
-    return send_file('html/home.html')
+    return send_file('static/html/home.html')
 
 @app.route('/sensors')
 async def sensors_pg(request):
-    return send_file('html/sensors.html')
+    return send_file('static/html/sensors.html')
 
 @app.route('/dash')
 async def dash_pg(request):
-    return send_file('html/dash.html')
+    return send_file('static/html/dash.html')
 
 @app.route('/cam')
 async def cam_pg(request):
-    return send_file('html/cam.html')
+    return send_file('static/html/cam.html')
 
 @app.route('/clock')
 async def clock_pg(request):
@@ -107,7 +107,7 @@ async def clock_pg(request):
         min = request.form['min']
         dt = (year, month, day, 0, hour, min, 0, 0)
         rtc.datetime(dt)
-    return send_file('html/clock.html')
+    return send_file('static/html/clock.html')
 
 #send RTC time in json
 @app.route('/rtc')
