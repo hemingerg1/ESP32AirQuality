@@ -1,5 +1,5 @@
-wifi_ssid =
-wifi_password =
+WIFI_SSID =
+WIFI_PASSWORD =
 
-email_address =
-email_password =
+TELEGRAM_TOKEN =
+TELEGRAM_CHAT_ID =
