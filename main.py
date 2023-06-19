@@ -9,6 +9,8 @@ from microdot_asyncio import Microdot, Response, send_file
 import secrets
 import urequests
 
+alerted = False
+ii = 0
 
 # Initialize MicroDot
 app = Microdot()
@@ -26,12 +28,16 @@ pin27 = Pin(13, Pin.OUT)
 pm = pms5003.PMS5003(pms_uart, reset_pin=pin27)
 
 def sendTelegram(message):
-    print(urequests.post(f'https://api.telegram.org/bot{secrets.TELEGRAM_TOKEN}/sendMessage?chat_id={secrets.TELEGRAM_CHAT_ID}&text={message}'))
+    r = urequests.post(f'https://api.telegram.org/bot{secrets.TELEGRAM_TOKEN}/sendMessage?chat_id={secrets.TELEGRAM_CHAT_ID}&text={message}')
+    r.close()
     print('telegram sent')
 
 def getLastMessage():
     url = f'https://api.telegram.org/bot{secrets.TELEGRAM_TOKEN}/getUpdates?offset=-1'
-    return urequests.get(url).ujson()['result'][0]['message']['text']
+    r = urequests.get(url)
+    text = r.json()['result'][0]['message']['text']
+    r.close()
+    return text
 
 data = {'tempc':0, 'tempf':[], 'hum':[], 'pres':0, 'gas_res':0, 'aq':[], 
         'pm10_std':0, 'pm25_std':0, 'pm100_std':0, 'pm10_env':[], 'pm25_env':[], 'pm100_env':[], 
@@ -39,10 +45,10 @@ data = {'tempc':0, 'tempf':[], 'hum':[], 'pres':0, 'gas_res':0, 'aq':[],
         'mem_used':0, 'mem_free':0, 'mem_tot':0, 'mem_usedp':[], 'time':[]}
 data_lists = ['tempf', 'hum', 'aq', 'pm10_env', 'pm25_env', 'pm100_env', 'mem_usedp', 'time']
 
-alerted = False
-counter = 0
+
 
 async def get_data(max_hist_length=30):
+    global ii
     data['tempc'] = round(bme.temperature, 2)
     data['tempf'].append(round((data['tempc'] * (9/5)) + 32, 1))
     data['hum'].append(round(bme.humidity, 1))
@@ -79,7 +85,7 @@ async def get_data(max_hist_length=30):
         if len(data[r]) > max_hist_length:
             data[r].pop(0)
 
-    sendTelegram('counter1')
+    print(getLastMessage())
 
     if data['pm25_env'][-1] is not None and data['pm25_env'][-1] > 50:
         if not alerted:
