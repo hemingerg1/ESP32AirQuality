@@ -6,8 +6,8 @@ import bme680
 import bme680AQ
 import pms5003
 from microdot_asyncio import Microdot, Response, send_file
-#import umail
-#import secrets
+import secrets
+import urequests
 
 
 # Initialize MicroDot
@@ -15,7 +15,7 @@ app = Microdot()
 Response.default_content_type = 'text/html'
 
 # Initialize BME680
-bme_i2c = SoftI2C(scl=Pin(26), sda=Pin(27))
+bme_i2c = SoftI2C(scl=Pin(27), sda=Pin(26))
 bme = bme680.BME680_I2C(i2c=bme_i2c)
 #Initialize IAQ calculator
 iaq_tracker = bme680AQ.IAQTracker(burn_in_cycles = 100)
@@ -25,19 +25,22 @@ pms_uart = UART(1, tx=14, rx=12, baudrate=9600)
 pin27 = Pin(13, Pin.OUT)
 pm = pms5003.PMS5003(pms_uart, reset_pin=pin27)
 
+def sendTelegram(message):
+    print(urequests.post(f'https://api.telegram.org/bot{secrets.TELEGRAM_TOKEN}/sendMessage?chat_id={secrets.TELEGRAM_CHAT_ID}&text={message}'))
+    print('telegram sent')
 
-def send_email(message):
-    smtp = umail.SMTP('smtp.gmail.com', 587, username=secrets.email_address, password=secrets.email_password)
-    smtp.to(secrets.email_address)
-    smtp.send(message)
-    smtp.quit()
-    gc.collect()
+def getLastMessage():
+    url = f'https://api.telegram.org/bot{secrets.TELEGRAM_TOKEN}/getUpdates?offset=-1'
+    return urequests.get(url).ujson()['result'][0]['message']['text']
 
 data = {'tempc':0, 'tempf':[], 'hum':[], 'pres':0, 'gas_res':0, 'aq':[], 
         'pm10_std':0, 'pm25_std':0, 'pm100_std':0, 'pm10_env':[], 'pm25_env':[], 'pm100_env':[], 
         'pm3':0, 'pm5':0, 'pm10':0, 'pm25':0, 'pm50':0, 'pm100':0,
         'mem_used':0, 'mem_free':0, 'mem_tot':0, 'mem_usedp':[], 'time':[]}
 data_lists = ['tempf', 'hum', 'aq', 'pm10_env', 'pm25_env', 'pm100_env', 'mem_usedp', 'time']
+
+alerted = False
+counter = 0
 
 async def get_data(max_hist_length=30):
     data['tempc'] = round(bme.temperature, 2)
@@ -75,6 +78,16 @@ async def get_data(max_hist_length=30):
     for r in data_lists:
         if len(data[r]) > max_hist_length:
             data[r].pop(0)
+
+    sendTelegram('counter1')
+
+    if data['pm25_env'][-1] is not None and data['pm25_env'][-1] > 50:
+        if not alerted:
+            sendTelegram('PM is high')
+            alerted = True
+    else:
+        alerted = False
+        
 
 
 
@@ -158,8 +171,8 @@ uasyncio.run(main())
 # sensor pin      ESP32 pin 
 # Vin             3.3V
 # GND             GND
-# SCL             GPIO 26
-# SDA             GPIO 27
+# SCL             GPIO 27
+# SDA             GPIO 26
 
 
 ######### PMS5003 #########
@@ -169,3 +182,12 @@ uasyncio.run(main())
 # RXD             GPIO 14
 # TXD             GPIO 12
 # RESET           GPIO 13
+
+##### can use to send email alerts
+#import umail
+#def send_email(message):
+#    smtp = umail.SMTP('smtp.gmail.com', 587, username=secrets.EMAIL_ADDRESS, password=secrets.EMAIL_PASSWORD)
+#    smtp.to(secrets.email_address)
+#    smtp.send(message)
+#    smtp.quit()
+#    gc.collect()

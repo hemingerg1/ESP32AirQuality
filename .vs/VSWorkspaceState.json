@@ -1,7 +1,9 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\lib",
+    "\\lib\\Microdot"
   ],
-  "SelectedNode": "\\main.py",
+  "SelectedNode": "\\lib\\Microdot\\microdot.py",
   "PreviewInSolutionExplorer": false
 }
