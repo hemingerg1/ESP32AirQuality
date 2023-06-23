@@ -36,7 +36,7 @@ async function update_data(){
 
 update_data()
 
-// Continuos loop that runs evry 15 seconds to update our web page with the latest sensor readings
+// Continuos loop that runs evry 15 seconds to update the web page with the latest sensor readings
 setInterval(update_data, 15000);
 
 })
