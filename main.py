@@ -9,9 +9,11 @@ from microdot_asyncio import Microdot, Response, send_file
 import secrets
 import urequests
 
+data_sample_time = 15 # frequency to take data readings, in seconds
+door_alert_time = 40 # time to wait before alerting of door remaining open, in number of data samplings
 pm_alerted = False
 aq_alerted = False
-door_alert_time = 900 # in seconds
+
 
 # Initialize MicroDot
 app = Microdot()
@@ -39,6 +41,16 @@ HOdoor = Pin(21, Pin.IN, Pin.PULL_UP) # Human outside door
 HIdoor = Pin(19, Pin.IN, Pin.PULL_UP) # Human inside door
 
 
+data = {'tempc':0, 'tempf':[], 'hum':[], 'pres':0, 'gas_res':0, 'aq':[], 
+        'pm10_std':0, 'pm25_std':0, 'pm100_std':0, 'pm10_env':[], 'pm25_env':[], 'pm100_env':[], 
+        'pm3':0, 'pm5':0, 'pm10':0, 'pm25':0, 'pm50':0, 'pm100':0,
+        'mem_used':0, 'mem_free':0, 'mem_tot':0, 'mem_usedp':[], 'time':[],
+        'Ldoorsat':'', 'Ldoortime':0, 'Sdoorsat':'', 'Sdoortime':0,
+        'HOdoorsat':'', 'HOdoortime':0, 'HIdoorsat':'', 'HIdoortime':0}
+data_lists = ['tempf', 'hum', 'aq', 'pm10_env', 'pm25_env', 'pm100_env', 'mem_usedp', 'time']
+door_list = ['Ldoor', 'Sdoor', 'HOdoor', 'HIdoor']
+
+
 def sendTelegram(message):
     r = urequests.post(f'https://api.telegram.org/bot{secrets.TELEGRAM_TOKEN}/sendMessage?chat_id={secrets.TELEGRAM_CHAT_ID}&text={message}')
     r.close()
@@ -52,16 +64,6 @@ def getLastMessage():
     r.close()
     gc.collect()
     return text
-
-data = {'tempc':0, 'tempf':[], 'hum':[], 'pres':0, 'gas_res':0, 'aq':[], 
-        'pm10_std':0, 'pm25_std':0, 'pm100_std':0, 'pm10_env':[], 'pm25_env':[], 'pm100_env':[], 
-        'pm3':0, 'pm5':0, 'pm10':0, 'pm25':0, 'pm50':0, 'pm100':0,
-        'mem_used':0, 'mem_free':0, 'mem_tot':0, 'mem_usedp':[], 'time':[],
-        'Ldoorsat':'', 'Ldoortime':[], 'Sdoorsat':'', 'Sdoortime':[],
-        'HOdoorsat':'', 'HOdoortime':[], 'HIdoorsat':'', 'HIdoortime':[]}
-data_lists = ['tempf', 'hum', 'aq', 'pm10_env', 'pm25_env', 'pm100_env', 'mem_usedp', 'time']
-door_list = ['Ldoor', 'Sdoor', 'HOdoor', 'HIdoor']
-
 
 async def get_data(max_hist_length=30):
     global pm_alerted, aq_alerted
@@ -107,21 +109,26 @@ async def get_data(max_hist_length=30):
     for door in door_list:
         if door.value() == 1 and data[f'{door}sat'] != 'open': # door just opened
             data[f'{door}sat'] = 'open'
-            data[f'{door}time'] = time.time()
+            data[f'{door}time'] = 0
         elif door.value() == 1 and data[f'{door}sat'] == 'open': # door has been open
-            o_time = time.time() - data[f'{door}time']
-            if o_time > door_alert_time:
+            data[f'{door}time'] += 1
+            if data[f'{door}time'] == door_alert_time:
                 if door == 'Ldoor':
-                    sendTelegram('The large garage has been open for more than 15 mins')
+                    sendTelegram('The large garage has been open for more than 15 mins. Reply "c" to close.')
                 elif door == 'Sdoor':
                     sendTelegram('The small garage has been open for more than 15 mins')
                 elif door == 'HOdoor':
                     sendTelegram('The garage\'s outside walk in door has been open for more than 15 mins')
                 elif door == 'HIdoor':
                     sendTelegram('The garages\'s inside door to the shop has been open for more than 15 mins')
+            elif door == 'Ldoor' and data[f'{door}time'] > door_alert_time:
+                m = getLastMessage()
+                m = m.lower()
+                #################### TO DO: write function to close garage door #################
+                #if m == 'c':
         elif door.value() == 0 and data[f'{door}sat'] != 'closed': # door just closed
             data[f'{door}sat'] = 'closed'
-            data[f'{door}time'] = time.time()
+            data[f'{door}time'] = 0
 
     # send telegram alert if PM is too high
     if data['pm25_env'][-1] is not None and data['pm25_env'][-1] > 50:
@@ -206,7 +213,7 @@ async def static(request, path):
 
 
 
-async def update_readings(data_sample_time=10):
+async def update_readings(data_sample_time=data_sample_time):
     while True:
         uasyncio.create_task(get_data())
         await uasyncio.sleep(data_sample_time)
