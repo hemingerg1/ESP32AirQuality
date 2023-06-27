@@ -1,4 +1,5 @@
 from machine import Pin, SoftI2C, UART
+from micropython import const
 import uasyncio
 import gc
 import time
@@ -9,11 +10,14 @@ from microdot_asyncio import Microdot, Response, send_file
 import secrets
 import urequests
 
-data_sample_time = 15 # frequency to take data readings, in seconds
-door_alert_time = 40 # time to wait before alerting of door remaining open, in number of data samplings
+data_sample_time = const(15) # frequency to take data readings, in seconds
+max_hist_length = const(30) # max number of data point to keep
+door_alert_time = const(40) # time to wait before alerting of door remaining open, in number of data samplings
+pm_alert_level = const(50) # if pm2.5 goes above this, sends telegram alert 
+aq_alert_level = const(80) # if air quality drops below this, sends telegram alert
 pm_alerted = False
 aq_alerted = False
-
+teleDoorClosed = False
 
 # Initialize MicroDot
 app = Microdot()
@@ -34,7 +38,7 @@ pm = pms5003.PMS5003(pms_uart, reset_pin=pin27)
 
 # Intialize GPIO pins
 ## screw terminal pins, in order from top of board to usb side (23, 22, 21, 19, 5, 16, 4, 15)
-## for doors value of high or 1 means door is open
+## for doors, value of high or 1 means door is open
 Ldoor = Pin(23, Pin.IN, Pin.PULL_UP) # Large garage door
 Sdoor = Pin(22, Pin.IN, Pin.PULL_UP) # Small Garage door
 HOdoor = Pin(21, Pin.IN, Pin.PULL_UP) # Human outside door
@@ -50,23 +54,40 @@ data = {'tempc':0, 'tempf':[], 'hum':[], 'pres':0, 'gas_res':0, 'aq':[],
 data_lists = ['tempf', 'hum', 'aq', 'pm10_env', 'pm25_env', 'pm100_env', 'mem_usedp', 'time']
 door_list = ['Ldoor', 'Sdoor', 'HOdoor', 'HIdoor']
 
-
+# sends a message from telegram bot to the chat
 def sendTelegram(message):
     r = urequests.post(f'https://api.telegram.org/bot{secrets.TELEGRAM_TOKEN}/sendMessage?chat_id={secrets.TELEGRAM_CHAT_ID}&text={message}')
     r.close()
     print(f'Telegram sent. Message = "{message}"')
     gc.collect()
 
+# get the last massage in the chat sent to telegram bot
 def getLastMessage():
     url = f'https://api.telegram.org/bot{secrets.TELEGRAM_TOKEN}/getUpdates?offset=-1'
     r = urequests.get(url)
-    text = r.json()['result'][0]['message']['text']
+    text = r.json()['result'][-1]['message']['text']
+    time = r.json()['result'][-1]['message']['date']
     r.close()
     gc.collect()
-    return text
+    return text, time
 
-async def get_data(max_hist_length=30):
-    global pm_alerted, aq_alerted
+# closes garage door
+async def closeGarageDoor():
+    global Ldoor
+    print('Called to close garage door')
+    if Ldoor.value() == 1:
+        print('Door is open. Closing it now...')
+        ####### TO DO: need to figure out hardware side to impliment closing the door ############
+        #while Ldoor.value() == 1:
+        #    await uasyncio.sleep(5)
+        #if Ldoor.value() == 0:
+        #    print('Garage door closed successfully')
+    else:
+        print('Door already closed. Doing nothing.')
+
+# updates data with latest readings
+async def get_data():
+    global max_hist_length, pm_alert_level, aq_alert_level, pm_alerted, aq_alerted, teleDoorClosed
 
     data['tempc'] = round(bme.temperature, 2) + temp_offset
     data['tempf'].append(round((data['tempc'] * (9/5)) + 32, 1))
@@ -77,7 +98,6 @@ async def get_data(max_hist_length=30):
         data['aq'].append(round(iaq_tracker.getIAQ(temp=data['tempc'], hum=data['hum'][-1], R_gas=data['gas_res'])))
     except:
         pass
-
     data['pm10_std'] = pm.pm10_standard
     data['pm25_std'] = pm.pm25_standard
     data['pm100_std'] = pm.pm100_standard
@@ -90,7 +110,6 @@ async def get_data(max_hist_length=30):
     data['pm25'] = pm.particles_25um
     data['pm50'] = pm.particles_50um
     data['pm100'] = pm.particles_100um
-
     data['mem_used'] = round(gc.mem_alloc() / 1000, 1)
     data['mem_free'] = round(gc.mem_free() / 1000, 1)
     data['mem_tot'] = data['mem_used'] + data['mem_free']
@@ -121,25 +140,27 @@ async def get_data(max_hist_length=30):
                     sendTelegram('The garage\'s outside walk in door has been open for more than 15 mins')
                 elif door == 'HIdoor':
                     sendTelegram('The garages\'s inside door to the shop has been open for more than 15 mins')
-            elif door == 'Ldoor' and data[f'{door}time'] > door_alert_time:
-                m = getLastMessage()
+            elif door == 'Ldoor' and data[f'{door}time'] > door_alert_time: # check for telegram request to close door
+                m, t = getLastMessage()
                 m = m.lower()
-                #################### TO DO: write function to close garage door #################
-                #if m == 'c':
+                if m == 'c' and t > time.time() - (data_sample_time * 2) and teleDoorClosed == False:
+                    teleDoorClosed = True
+                    uasyncio.create_task(closeGarageDoor())
         elif door.value() == 0 and data[f'{door}sat'] != 'closed': # door just closed
             data[f'{door}sat'] = 'closed'
             data[f'{door}time'] = 0
+            teleDoorClosed = False
 
     # send telegram alert if PM is too high
-    if data['pm25_env'][-1] is not None and data['pm25_env'][-1] > 50:
+    if data['pm25_env'][-1] is not None and data['pm25_env'][-1] > pm_alert_level:
         if not pm_alerted:
             sendTelegram('PM is high')
             pm_alerted = True
     else:
         pm_alerted = False
     
-    # send telegram alert if Air Quality if poor
-    if len(data['aq']) > 0 and data['aq'][-1] < 80:
+    # send telegram alert if Air Quality is poor
+    if len(data['aq']) > 0 and data['aq'][-1] < aq_alert_level:
         if not aq_alerted:
             sendTelegram('Air Quality is poor')
             aq_alerted = True
@@ -148,7 +169,7 @@ async def get_data(max_hist_length=30):
         
 
 
-
+# Microdot web pages
 @app.route('/')
 async def home_pg(request):
     return send_file('static/html/home.html')
@@ -212,12 +233,13 @@ async def static(request, path):
     return send_file('static/' + path)
 
 
-
+# create async loop to update data
 async def update_readings(data_sample_time=data_sample_time):
     while True:
         uasyncio.create_task(get_data())
         await uasyncio.sleep(data_sample_time)
-    
+
+# create main async loop   
 async def main():
     data_task = uasyncio.create_task(update_readings())
     app_task = uasyncio.create_task(app.start_server(debug=True, port=80))
