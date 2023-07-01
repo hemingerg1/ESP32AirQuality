@@ -45,16 +45,16 @@ var pm25Trace = {
 // Chart Layouts
 var layout = {
   autosize: false,
-  paper_bgcolor: "#1f222b",
-  plot_bgcolor: "#2c2c38",
-  font: {size: 10, color: "#9b81bc"},
+  paper_bgcolor: "#2f3e46",
+  plot_bgcolor: "#59656b",
+  font: { size: 10, color: "#f4f6f3"},
   colorway: ["#A2c799", "#99a2c7", "#c799a2"],
   width: chartWidth,
   height: chartHeight,
   margin: {t: 1, b: 30},
   modebar: {orientation: "v"},
-  xaxis: {gridcolor: "#3a3849"},
-  yaxis: {gridcolor: "#3a3849"},
+  xaxis: { gridcolor: "#354f52" },
+  yaxis: { gridcolor: "#354f52" },
   showlegend: false,
 };
 

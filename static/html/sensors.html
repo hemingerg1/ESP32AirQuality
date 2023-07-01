@@ -109,48 +109,73 @@
 
      <div class="flex_box">
        <div class="box-topic">BME680</div>
-       <div class="box_table">
-          <table>
-            <tr>
-              <th colspan=2>Sensor Readings</th>
-            </tr>
-            <tr>
-              <td>Temperature</td>
-              <td id="tempc"></td>
-            </tr>
-            <tr>
-              <td>Humidity</td>
-              <td id="hum"></td>
-            </tr>
-            <tr>
-              <td>Pressure</td>
-              <td id="press"></td>
-            </tr>
-            <tr>
-              <td>Gas Resistance</td>
-              <td id="gas_res"></td>
-            </tr>
-          </table>
-       </div>
-     </div>  
-     
+        <div class="box_table">
+           <table>
+               <tr>
+                   <th colspan=2>Sensor Readings</th>
+               </tr>
+               <tr>
+                   <td>Temperature</td>
+                   <td id="tempc"></td>
+               </tr>
+               <tr>
+                   <td>Humidity</td>
+                   <td id="hum"></td>
+               </tr>
+               <tr>
+                   <td>Pressure</td>
+                   <td id="press"></td>
+               </tr>
+               <tr>
+                   <td>Gas Resistance</td>
+                   <td id="gas_res"></td>
+               </tr>
+           </table>
+        </div>
+
+        <div class="box_table">
+            <table>
+                <tr>
+                    <th colspan=2>Calculated Data</th>
+                </tr>
+                <tr>
+                    <td>Temperature</td>
+                    <td id="tempf"></td>
+                </tr>
+                <tr>
+                    <td>Air Quality</td>
+                    <td id="aq"></td>
+                </tr>
+            </table>
+        </div>
+     </div>
+          
+
      <div class="flex_box">
-       <div class="box-topic">Calculated</div>
-       <div class="box_table">
-          <table>
-            <tr>
-              <th colspan=2>Calculated Data</th>
-            </tr>
-            <tr>
-              <td>Temperature</td>
-              <td id="tempf"></td>
-            </tr>
-            <tr>
-              <td>Air Quality</td>
-              <td id="aq"></td>
-            </tr>
-          </table>
-       </div>
+         <div class="box-topic">Garage Status</div>
+         <div class="box_table">
+             <table>
+                 <tr>
+                     <th colspan=2>Doors</th>
+                 </tr>
+                 <tr>
+                     <td>Large Garage Door</td>
+                     <td id="LGdoor"></td>
+                 </tr>
+                 <tr>
+                     <td>Small Garage Door</td>
+                     <td id="SGdoor"></td>
+                 </tr>
+                 <tr>
+                     <td>Outside Walk-in Door</td>
+                     <td id="OWdoor"></td>
+                 </tr>
+                 <tr>
+                     <td>Inside Shop Door</td>
+                     <td id="ISdoor"></td>
+                 </tr>
+             </table>
+         </div>
      </div>
 
    </div>

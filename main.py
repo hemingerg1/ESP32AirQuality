@@ -32,17 +32,16 @@ iaq_tracker = bme680AQ.IAQTracker(burn_in_cycles = 100)
 temp_offset = -2.3
 
 # Intialize PMS5003
-pms_uart = UART(1, tx=14, rx=12, baudrate=9600)
+pms_uart = UART(1, tx=14, rx=25, baudrate=9600)
 pin27 = Pin(13, Pin.OUT)
-pm = pms5003.PMS5003(pms_uart, reset_pin=pin27)
+pm = pms5003.PMS5003(pms_uart, reset_pin=pin27, active_mode=False, interval_passive_mode=20, eco_mode=False)
 
 # Intialize GPIO pins
-## screw terminal pins, in order from top of board to usb side (23, 22, 21, 19, 5, 16, 4, 15)
 ## for doors, value of high or 1 means door is open
-Ldoor = Pin(23, Pin.IN, Pin.PULL_UP) # Large garage door
-Sdoor = Pin(22, Pin.IN, Pin.PULL_UP) # Small Garage door
-HOdoor = Pin(21, Pin.IN, Pin.PULL_UP) # Human outside door
-HIdoor = Pin(19, Pin.IN, Pin.PULL_UP) # Human inside door
+Ldoor = Pin(23, Pin.IN, Pin.PULL_UP)
+Sdoor = Pin(22, Pin.IN, Pin.PULL_UP)
+HOdoor = Pin(21, Pin.IN, Pin.PULL_UP)
+HIdoor = Pin(19, Pin.IN, Pin.PULL_UP)
 
 
 data = {'tempc':0, 'tempf':[], 'hum':[], 'pres':0, 'gas_res':0, 'aq':[], 
@@ -52,7 +51,7 @@ data = {'tempc':0, 'tempf':[], 'hum':[], 'pres':0, 'gas_res':0, 'aq':[],
         'Ldoorsat':'', 'Ldoortime':0, 'Sdoorsat':'', 'Sdoortime':0,
         'HOdoorsat':'', 'HOdoortime':0, 'HIdoorsat':'', 'HIdoortime':0}
 data_lists = ['tempf', 'hum', 'aq', 'pm10_env', 'pm25_env', 'pm100_env', 'mem_usedp', 'time']
-door_list = ['Ldoor', 'Sdoor', 'HOdoor', 'HIdoor']
+door_list = {'Ldoor':Ldoor, 'Sdoor':Sdoor, 'HOdoor':HOdoor, 'HIdoor':HIdoor}
 
 # sends a message from telegram bot to the chat
 def sendTelegram(message):
@@ -60,13 +59,18 @@ def sendTelegram(message):
     r.close()
     print(f'Telegram sent. Message = "{message}"')
     gc.collect()
+    return
 
 # get the last massage in the chat sent to telegram bot
 def getLastMessage():
     url = f'https://api.telegram.org/bot{secrets.TELEGRAM_TOKEN}/getUpdates?offset=-1'
     r = urequests.get(url)
-    text = r.json()['result'][-1]['message']['text']
-    time = r.json()['result'][-1]['message']['date']
+    if r.json()['result']:
+        text = r.json()['result'][-1]['message']['text']
+        time = r.json()['result'][-1]['message']['date']
+    else:
+        text = ''
+        time = 0
     r.close()
     gc.collect()
     return text, time
@@ -74,16 +78,21 @@ def getLastMessage():
 # closes garage door
 async def closeGarageDoor():
     global Ldoor
-    print('Called to close garage door')
     if Ldoor.value() == 1:
-        print('Door is open. Closing it now...')
+        sendTelegram('Closing garage door now...')
         ####### TO DO: need to figure out hardware side to impliment closing the door ############
-        #while Ldoor.value() == 1:
-        #    await uasyncio.sleep(5)
-        #if Ldoor.value() == 0:
-        #    print('Garage door closed successfully')
+        c = 0
+        while Ldoor.value() == 1:
+            if c >= 12:
+                sendTelegram('Garage door did not close succesfully. Timed out.')
+                break
+            await uasyncio.sleep(5)
+            c += 1
+        if Ldoor.value() == 0:
+            sendTelegram('Garage door closed successfully')
     else:
-        print('Door already closed. Doing nothing.')
+        sendTelegram('Door already closed. Doing nothing.')
+    return
 
 # updates data with latest readings
 async def get_data():
@@ -92,7 +101,7 @@ async def get_data():
     data['tempc'] = round(bme.temperature, 2) + temp_offset
     data['tempf'].append(round((data['tempc'] * (9/5)) + 32, 1))
     data['hum'].append(round(bme.humidity, 1))
-    data['pres'] = round(bme.pressure/1000, 3)
+    data['pres'] = round(bme.pressure/1000, 2)
     data['gas_res'] = bme.gas
     try:
         data['aq'].append(round(iaq_tracker.getIAQ(temp=data['tempc'], hum=data['hum'][-1], R_gas=data['gas_res'])))
@@ -125,30 +134,34 @@ async def get_data():
             data[r].pop(0)
 
     # check status of doors
-    for door in door_list:
-        if door.value() == 1 and data[f'{door}sat'] != 'open': # door just opened
-            data[f'{door}sat'] = 'open'
-            data[f'{door}time'] = 0
-        elif door.value() == 1 and data[f'{door}sat'] == 'open': # door has been open
-            data[f'{door}time'] += 1
-            if data[f'{door}time'] == door_alert_time:
-                if door == 'Ldoor':
-                    sendTelegram('The large garage has been open for more than 15 mins. Reply "c" to close.')
-                elif door == 'Sdoor':
-                    sendTelegram('The small garage has been open for more than 15 mins')
-                elif door == 'HOdoor':
-                    sendTelegram('The garage\'s outside walk in door has been open for more than 15 mins')
-                elif door == 'HIdoor':
-                    sendTelegram('The garages\'s inside door to the shop has been open for more than 15 mins')
-            elif door == 'Ldoor' and data[f'{door}time'] > door_alert_time: # check for telegram request to close door
+    for d, p in door_list.items():
+        if p.value() == 1 and data[f'{d}sat'] != 'open': # door just opened
+            data[f'{d}sat'] = 'open'
+            data[f'{d}time'] = 0
+        elif p.value() == 1 and data[f'{d}sat'] == 'open': # door has been open
+            data[f'{d}time'] += 1
+            if data[f'{d}time'] == door_alert_time:
+                if d == 'Ldoor':
+                    sendTelegram('LARGE GARAGE DOOR has been left open.  Reply "c" to close.')
+                    await uasyncio.sleep(2)
+                elif d == 'Sdoor':
+                    sendTelegram('SMALL GARAGE DOOR has been left open.')
+                    await uasyncio.sleep(2)
+                elif d == 'HOdoor':
+                    sendTelegram('GARAGE\'S OUTSIDE WALK-IN DOOR has been left open.')
+                    await uasyncio.sleep(2)
+                elif d == 'HIdoor':
+                    sendTelegram('GARAGE\'S INSIDE DOOR TO SHOP has been left open.')
+                    await uasyncio.sleep(2)
+            elif d == 'Ldoor' and data[f'{d}time'] > door_alert_time: # check for telegram request to close door
                 m, t = getLastMessage()
                 m = m.lower()
                 if m == 'c' and t > time.time() - (data_sample_time * 2) and teleDoorClosed == False:
                     teleDoorClosed = True
                     uasyncio.create_task(closeGarageDoor())
-        elif door.value() == 0 and data[f'{door}sat'] != 'closed': # door just closed
-            data[f'{door}sat'] = 'closed'
-            data[f'{door}time'] = 0
+        elif p.value() == 0 and data[f'{d}sat'] != 'closed': # door just closed
+            data[f'{d}sat'] = 'closed'
+            data[f'{d}time'] = 0
             teleDoorClosed = False
 
     # send telegram alert if PM is too high
@@ -166,7 +179,8 @@ async def get_data():
             aq_alerted = True
     else:
         aq_alerted = False
-        
+     
+    return
 
 
 # Microdot web pages
@@ -201,6 +215,7 @@ async def clock_set(request):
     dt = (year, month, day, 0, hour, minute, 0, 0)
     print(f'set real time clock to: {dt}')
     RTC().datetime(dt)
+    return
 
 #send RTC time in json
 @app.route('/rtc')
@@ -236,13 +251,13 @@ async def static(request, path):
 # create async loop to update data
 async def update_readings(data_sample_time=data_sample_time):
     while True:
-        uasyncio.create_task(get_data())
+        await uasyncio.create_task(get_data())
         await uasyncio.sleep(data_sample_time)
 
 # create main async loop   
 async def main():
     data_task = uasyncio.create_task(update_readings())
-    app_task = uasyncio.create_task(app.start_server(debug=True, port=80))
+    app_task = uasyncio.create_task(app.start_server(debug=False, port=80))
     await uasyncio.gather(data_task, app_task)
     
 uasyncio.run(main())
@@ -261,7 +276,7 @@ uasyncio.run(main())
 # Vcc             +5V
 # GND             GND
 # RXD             GPIO 14
-# TXD             GPIO 12
+# TXD             GPIO 25
 # RESET           GPIO 13
 
 ##### can use to send email alerts

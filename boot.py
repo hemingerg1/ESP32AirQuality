@@ -1,19 +1,5 @@
-import io
-import os
 import network
 import secrets
-
-class logToFile(io.IOBase):
-    def __init__(self):
-        pass
- 
-    def write(self, data):
-        with open("logfile.txt", mode="a") as f:
-            f.write(data)
-        return len(data)
- 
-# now your console text output is saved into file
-os.dupterm(logToFile())
 
 ap = network.WLAN(network.AP_IF)
 ap.active(False)

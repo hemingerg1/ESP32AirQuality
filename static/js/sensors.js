@@ -29,6 +29,11 @@ async function update_data(){
 
 	$("#tempf").text(jsonData.tempf.at(-1) + " F");
 	$("#aq").text(jsonData.aq.at(-1) + " %");
+
+	$("#LGdoor").text(jsonData.Ldoorsat);
+	$("#SGdoor").text(jsonData.Sdoorsat);
+	$("#OWdoor").text(jsonData.HOdoorsat);
+	$("#ISdoor").text(jsonData.HIdoorsat);
 	
 	warning_coloring();
 	console.log("updated data");
