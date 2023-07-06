@@ -14,7 +14,7 @@ data_sample_time = const(15) # frequency to take data readings, in seconds
 max_hist_length = const(30) # max number of data point to keep
 door_alert_time = const(40) # time to wait before alerting of door remaining open, in number of data samplings
 pm_alert_level = const(50) # if pm2.5 goes above this, sends telegram alert 
-aq_alert_level = const(80) # if air quality drops below this, sends telegram alert
+aq_alert_level = const(70) # if air quality drops below this, sends telegram alert
 pm_alerted = False
 aq_alerted = False
 teleDoorClosed = False
@@ -29,7 +29,7 @@ bme = bme680.BME680_I2C(i2c=bme_i2c)
 # Initialize IAQ calculator
 iaq_tracker = bme680AQ.IAQTracker(burn_in_cycles = 100)
 # applies an offset to BME680 temperature reading for calibration
-temp_offset = -2.3
+temp_offset = -3.3
 
 # Intialize PMS5003
 pms_uart = UART(1, tx=14, rx=25, baudrate=9600)
@@ -167,7 +167,7 @@ async def get_data():
     # send telegram alert if PM is too high
     if data['pm25_env'][-1] is not None and data['pm25_env'][-1] > pm_alert_level:
         if not pm_alerted:
-            sendTelegram('PM is high')
+            sendTelegram(f'PM is high.  PM = {data["pm25_env"][-1]}')
             pm_alerted = True
     else:
         pm_alerted = False
@@ -175,9 +175,9 @@ async def get_data():
     # send telegram alert if Air Quality is poor
     if len(data['aq']) > 0 and data['aq'][-1] < aq_alert_level:
         if not aq_alerted:
-            sendTelegram('Air Quality is poor')
+            sendTelegram(f'Air Quality is poor.  AQ = {data["aq"][-1]}')
             aq_alerted = True
-    else:
+    elif data['aq'][-1] > aq_alert_level + 10:
         aq_alerted = False
      
     return

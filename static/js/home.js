@@ -51,7 +51,7 @@ var layout = {
   colorway: ["#A2c799", "#99a2c7", "#c799a2"],
   width: chartWidth,
   height: chartHeight,
-  margin: {t: 1, b: 30},
+  margin: {t: 1, b: 60},
   modebar: {orientation: "v"},
   xaxis: { gridcolor: "#354f52" },
   yaxis: { gridcolor: "#354f52" },
