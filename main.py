@@ -177,7 +177,7 @@ async def get_data():
         if not aq_alerted:
             sendTelegram(f'Air Quality is poor.  AQ = {data["aq"][-1]}')
             aq_alerted = True
-    elif data['aq'][-1] > aq_alert_level + 10:
+    elif len(data['aq']) > 0 and data['aq'][-1] > aq_alert_level + 10:
         aq_alerted = False
      
     return
