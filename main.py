@@ -1,4 +1,5 @@
-from machine import Pin, SoftI2C, UART
+import ulogger
+from machine import Pin, SoftI2C, UART, RTC
 from micropython import const
 import uasyncio
 import gc
@@ -18,6 +19,23 @@ aq_alert_level = const(70) # if air quality drops below this, sends telegram ale
 pm_alerted = False
 aq_alerted = False
 teleDoorClosed = False
+
+# Initialize Logger
+class Clock(ulogger.BaseClock):
+    def __init__(self):
+        self.rtc = RTC()        
+    def __call__(self) -> str:
+        y,m,d,_,h,mi,s,_ = self.rtc.datetime ()
+        return '%d-%d-%d %d:%d:%d' % (y,m,d,h,mi,s)
+clock = Clock()
+file_handler = ulogger.Handler(
+    level=ulogger.WARN,
+    fmt='&(time)% - &(level)% - &(msg)%',
+    clock=clock,
+    direction=ulogger.TO_FILE,
+    file_name='log.txt',
+    max_file_size=4096)
+logger = ulogger.Logger(handlers=file_handler)
 
 # Initialize MicroDot
 app = Microdot()
@@ -54,10 +72,11 @@ data_lists = ['tempf', 'hum', 'aq', 'pm10_env', 'pm25_env', 'pm100_env', 'mem_us
 door_list = {'Ldoor':Ldoor, 'Sdoor':Sdoor, 'HOdoor':HOdoor, 'HIdoor':HIdoor}
 
 # sends a message from telegram bot to the chat
-def sendTelegram(message):
+async def sendTelegram(message):
     r = urequests.post(f'https://api.telegram.org/bot{secrets.TELEGRAM_TOKEN}/sendMessage?chat_id={secrets.TELEGRAM_CHAT_ID}&text={message}')
     r.close()
     print(f'Telegram sent. Message = "{message}"')
+    logger.info(f'Telegram sent. Message = "{message}"')
     gc.collect()
     return
 
@@ -142,16 +161,16 @@ async def get_data():
             data[f'{d}time'] += 1
             if data[f'{d}time'] == door_alert_time:
                 if d == 'Ldoor':
-                    sendTelegram('LARGE GARAGE DOOR has been left open.  Reply "c" to close.')
+                    uasyncio.create_task(sendTelegram('LARGE GARAGE DOOR has been left open.  Reply "c" to close.'))
                     await uasyncio.sleep(2)
                 elif d == 'Sdoor':
-                    sendTelegram('SMALL GARAGE DOOR has been left open.')
+                    uasyncio.create_task(sendTelegram('SMALL GARAGE DOOR has been left open.'))
                     await uasyncio.sleep(2)
                 elif d == 'HOdoor':
-                    sendTelegram('GARAGE\'S OUTSIDE WALK-IN DOOR has been left open.')
+                    uasyncio.create_task(sendTelegram('GARAGE\'S OUTSIDE WALK-IN DOOR has been left open.'))
                     await uasyncio.sleep(2)
                 elif d == 'HIdoor':
-                    sendTelegram('GARAGE\'S INSIDE DOOR TO SHOP has been left open.')
+                    uasyncio.create_task(sendTelegram('GARAGE\'S INSIDE DOOR TO SHOP has been left open.'))
                     await uasyncio.sleep(2)
             elif d == 'Ldoor' and data[f'{d}time'] > door_alert_time: # check for telegram request to close door
                 m, t = getLastMessage()
@@ -206,7 +225,6 @@ async def clock_pg(request):
 
 @app.route('/clock', methods=['POST'])
 async def clock_set(request):
-    from machine import RTC
     year = int(request.form['year'])
     month = int(request.form['month'])
     day = int(request.form['day'])
@@ -214,6 +232,7 @@ async def clock_set(request):
     minute = int(request.form['min'])
     dt = (year, month, day, 0, hour, minute, 0, 0)
     print(f'set real time clock to: {dt}')
+    logger.info(f'set real time clock to: {dt}')
     RTC().datetime(dt)
     return
 
@@ -237,6 +256,7 @@ async def mem_collect(request, response):
 @app.route('/shutdown')
 async def shutdown(request):
     request.app.shutdown()
+    logger.info('Server shutdown by /shutdown route')
     return 'The server is shutting down...'
 
 # sends the static files (html,css,javascript)

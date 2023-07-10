@@ -1,5 +1,6 @@
 import network
 import secrets
+import ntptime
 
 ap = network.WLAN(network.AP_IF)
 ap.active(False)
@@ -19,3 +20,9 @@ def do_connect():
     print('>>>>>>>>>>>>>>> IP address:', sta_if.ifconfig()[0], '<<<<<<<<<<<<<<<')
     
 do_connect()
+
+try:
+    ntptime.host = 'time.google.com'
+    ntptime.settime()
+except:
+    print('Failed to get ntp time.')
