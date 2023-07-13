@@ -54,11 +54,18 @@ var layout = {
   margin: {t: 1, b: 60},
   modebar: {orientation: "v"},
   xaxis: { gridcolor: "#354f52" },
-  yaxis: { gridcolor: "#354f52" },
+  yaxis: {autorange:true, type:'linear', gridcolor: "#354f52"},
   showlegend: false,
 };
 
+var templayout = Object.create(layout);
+templayout.yaxis = { range: [30, 100] }
+
+var humlayout = Object.create(layout);
+humlayout.yaxis = { range: [25, 75] }
+
 var pmlayout = Object.create(layout);
+pmlayout.yaxis = {range: [0, 75]}
 pmlayout.shapes = [{
 	type: 'line',
 	xref: 'paper',
@@ -85,6 +92,7 @@ pmlayout.shapes = [{
 }]
 
 var aqlayout = Object.create(layout);
+aqlayout.yaxis = { range: [50, 100] }
 aqlayout.shapes = [{
 	type: 'line',
 	xref: 'paper',
@@ -111,8 +119,8 @@ aqlayout.shapes = [{
 }]
 
 // creates new charts
-Plotly.newPlot(tempChartDiv, [tempTrace], layout);
-Plotly.newPlot(humChartDiv, [humTrace], layout);
+Plotly.newPlot(tempChartDiv, [tempTrace], templayout);
+Plotly.newPlot(humChartDiv, [humTrace], humlayout);
 Plotly.newPlot(aqChartDiv, [aqTrace], aqlayout);
 Plotly.newPlot(pmChartDiv, [pm25Trace], pmlayout);
 
