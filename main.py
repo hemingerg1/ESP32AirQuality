@@ -29,13 +29,13 @@ class Clock(ulogger.BaseClock):
         return '%d-%d-%d %d:%d:%d' % (y,m,d,h,mi,s)
 clock = Clock()
 file_handler = ulogger.Handler(
-    level=ulogger.WARN,
+    level=ulogger.INFO,
     fmt='&(time)% - &(level)% - &(msg)%',
     clock=clock,
     direction=ulogger.TO_FILE,
     file_name='log.txt',
     max_file_size=4096)
-logger = ulogger.Logger(handlers=file_handler)
+logger = ulogger.Logger(name=__name__, handlers=[file_handler])
 
 # Initialize MicroDot
 app = Microdot()

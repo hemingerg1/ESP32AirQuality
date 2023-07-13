@@ -1,10 +1,9 @@
 try:    import time
 except: import utime as time
 
-try:    from micropython import const
-except: const = lambda x:x # for debug
+from micropython import const
 
-from io import TextIOWrapper
+#from io import TextIOWrapper    not working
 
 __version__ = "v1.2"
 
@@ -78,7 +77,7 @@ class Handler():
     _color: bool
     _file_name: str
     _max_size: int
-    _file = TextIOWrapper
+    #_file = TextIOWrapper   this wasn't working
 
     def __init__(self,
         level: int = INFO,
@@ -131,7 +130,7 @@ class Handler():
         :param max_file_size: available when you set `TO_FILE` to param `direction`. The unit is `byte`, (default for 4k)
         :type max_file_size: str
         """
-        #TODO: 文件按日期存储, 最大份数的设置.
+        
         self._direction = direction
         self.level = level
         self._clock = clock if clock else BaseClock()
@@ -142,33 +141,6 @@ class Handler():
         if direction == TO_FILE:
             self._file = open(file_name, 'a+')
 
-        # 特么的re居然不能全局匹配, 烦了, 只能自己来.
-        # m = re.match(r"&\((.*?)\)%", fmt)
-        # i = 0
-        # while True:
-        #     # 由于蛋疼的 ure 不能直接获取匹配结果的数量, 只能使用这种蠢蛋方法来循环.
-        #     try:
-        #         text = m.group(i)
-
-        #     except:
-        #         # 发生错误说明已经遍历完毕
-        #         break
-
-        #     # 使用指针代替文本来减少开销
-        #     if text == "level":
-        #         self._map.append(_level)
-        #     elif text == "msg":
-        #         self._map.append(_msg)
-        #     elif text == "time":
-        #         self._map.append(_time)
-        #     elif text == "name":
-        #         self._map.append(_name)
-        #     elif text == "fnname":
-        #         self._map.append(_fnname)
-
-        #     i += 1
-
-        # 添加映射
         self._map = bytearray()
         idx = 0
         while True:
@@ -193,9 +165,6 @@ class Handler():
                     self._map.append(_fnname)
             else:  # 没找到, 代表后面没有了
                 break
-
-        # 将 template 变成可被格式化的文本
-        # 确保最后一个是换行字符
 
         self._template = fmt.replace("&(level)%", "%s")\
             .replace("&(msg)%", "%s")\
