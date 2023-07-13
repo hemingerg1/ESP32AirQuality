@@ -5,7 +5,7 @@ from micropython import const
 
 #from io import TextIOWrapper    not working
 
-__version__ = "v1.2"
+__version__ = "v1.2.1"
 
 DEBUG:    int = const(10)
 INFO:     int = const(20)

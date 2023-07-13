@@ -54,18 +54,17 @@ var layout = {
   margin: {t: 1, b: 60},
   modebar: {orientation: "v"},
   xaxis: { gridcolor: "#354f52" },
-  yaxis: {autorange:true, type:'linear', gridcolor: "#354f52"},
   showlegend: false,
 };
 
 var templayout = Object.create(layout);
-templayout.yaxis = { range: [30, 100] }
+templayout.yaxis = { range: [50, 80], type:'linear', gridcolor: "#354f52" }
 
 var humlayout = Object.create(layout);
-humlayout.yaxis = { range: [25, 75] }
+humlayout.yaxis = { range: [30, 70], type:'linear', gridcolor: "#354f52" }
 
 var pmlayout = Object.create(layout);
-pmlayout.yaxis = {range: [0, 75]}
+pmlayout.yaxis = {range: [0, 60], type:'linear', gridcolor: "#354f52"}
 pmlayout.shapes = [{
 	type: 'line',
 	xref: 'paper',
@@ -92,7 +91,7 @@ pmlayout.shapes = [{
 }]
 
 var aqlayout = Object.create(layout);
-aqlayout.yaxis = { range: [50, 100] }
+aqlayout.yaxis = { range: [50, 100], type:'linear', gridcolor: "#354f52" }
 aqlayout.shapes = [{
 	type: 'line',
 	xref: 'paper',
