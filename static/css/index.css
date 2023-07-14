@@ -61,7 +61,7 @@ body {
   padding: 20px;
   }
 
-/* for displaying the current readings on top of page */
+/* for displaying the current readings on top of home page */
 .flex_current {
 	display: flex;
 	align-items: center;
@@ -148,7 +148,22 @@ tr:last-of-type td:last-of-type {
   border-bottom-right-radius: 10px;
 }
 
-
+/* log page */
+.log {
+	display: flex;
+	flex-direction: column;
+	background-color: var(--text);
+	border: 5px solid var(--c1);
+	border-radius: 12px;
+	color: var(--background);
+	margin-top: 10px;
+	width: 100%;
+	height: fit-content;
+	padding: 5px;
+}
+.log h3 {
+	margin: 0 0 5px 0;
+}
 
 /* clock page */
 .current_time{

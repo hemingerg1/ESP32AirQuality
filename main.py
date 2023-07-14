@@ -219,6 +219,10 @@ async def dash_pg(request):
 async def cam_pg(request):
     return send_file('static/html/cam.html')
 
+@app.route('/log')
+async def log_pg(request):
+    return send_file('static/html/log.html')
+
 @app.route('/clock', methods=['GET'])
 async def clock_pg(request):
     return send_file('static/html/clock.html')
@@ -266,6 +270,14 @@ async def static(request, path):
         # don't allow moving up directories
         return 'Not found', 404
     return send_file('static/' + path)
+
+# sends log file
+@app.route('/log.txt')
+async def logf(request, path):
+    if '..' in path:
+        # don't allow moving up directories
+        return 'Not found', 404
+    return send_file('log.txt')
 
 
 # create async loop to update data
