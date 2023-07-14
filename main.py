@@ -1,4 +1,3 @@
-import ulogger
 from machine import Pin, SoftI2C, UART, RTC
 from micropython import const
 import uasyncio
@@ -10,6 +9,8 @@ import pms5003
 from microdot_asyncio import Microdot, Response, send_file
 import secrets
 import urequests
+import logger
+import wifi
 
 data_sample_time = const(15) # frequency to take data readings, in seconds
 max_hist_length = const(30) # max number of data point to keep
@@ -21,21 +22,7 @@ aq_alerted = False
 teleDoorClosed = False
 
 # Initialize Logger
-class Clock(ulogger.BaseClock):
-    def __init__(self):
-        self.rtc = RTC()        
-    def __call__(self) -> str:
-        y,m,d,_,h,mi,s,_ = self.rtc.datetime ()
-        return '%d-%d-%d %d:%d:%d' % (y,m,d,h,mi,s)
-clock = Clock()
-file_handler = ulogger.Handler(
-    level=ulogger.INFO,
-    fmt='&(time)% - &(level)% - &(msg)%',
-    clock=clock,
-    direction=ulogger.TO_FILE,
-    file_name='log.txt',
-    max_file_size=4096)
-logger = ulogger.Logger(name=__name__, handlers=[file_handler])
+log = logger.get_logger()
 
 # Initialize MicroDot
 app = Microdot()
@@ -75,8 +62,7 @@ door_list = {'Ldoor':Ldoor, 'Sdoor':Sdoor, 'HOdoor':HOdoor, 'HIdoor':HIdoor}
 async def sendTelegram(message):
     r = urequests.post(f'https://api.telegram.org/bot{secrets.TELEGRAM_TOKEN}/sendMessage?chat_id={secrets.TELEGRAM_CHAT_ID}&text={message}')
     r.close()
-    print(f'Telegram sent. Message = "{message}"')
-    logger.info(f'Telegram sent. Message = "{message}"')
+    log.info(f'Telegram sent. Message = "{message}"')
     gc.collect()
     return
 
@@ -142,6 +128,9 @@ async def get_data():
     data['mem_free'] = round(gc.mem_free() / 1000, 1)
     data['mem_tot'] = data['mem_used'] + data['mem_free']
     data['mem_usedp'].append(round(data['mem_used'] / data['mem_tot'] , 2))
+
+    if data['mem_usedp'][-1] >= 0.8:
+        log.WARN(f'Memory useage is high. Percent mem used = {data["mem_usedp"][-1]}')
 
     t = time.localtime()
     loc_tim = f'{t[3]}:{t[4]}:{t[5]}'
@@ -235,8 +224,7 @@ async def clock_set(request):
     hour = int(request.form['hour'])
     minute = int(request.form['min'])
     dt = (year, month, day, 0, hour, minute, 0, 0)
-    print(f'set real time clock to: {dt}')
-    logger.info(f'set real time clock to: {dt}')
+    log.info(f'set real time clock to: {dt}')
     RTC().datetime(dt)
     return
 
@@ -260,7 +248,7 @@ async def mem_collect(request, response):
 @app.route('/shutdown')
 async def shutdown(request):
     request.app.shutdown()
-    logger.info('Server shutdown by /shutdown route')
+    log.info('Server shutdown by /shutdown route')
     return 'The server is shutting down...'
 
 # sends the static files (html,css,javascript)
@@ -273,18 +261,20 @@ async def static(request, path):
 
 # sends log file
 @app.route('/log.txt')
-async def logf(request, path):
-    if '..' in path:
-        # don't allow moving up directories
-        return 'Not found', 404
+async def logf(request):
     return send_file('log.txt')
 
 
 # create async loop to update data
 async def update_readings(data_sample_time=data_sample_time):
+    l_count = 0
     while True:
+        l_count += 1
         await uasyncio.create_task(get_data())
         await uasyncio.sleep(data_sample_time)
+        if l_count >= 4:
+            wifi.internet_check()
+            l_count = 0
 
 # create main async loop   
 async def main():
