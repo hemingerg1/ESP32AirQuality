@@ -58,7 +58,7 @@ var layout = {
 };
 
 var templayout = Object.create(layout);
-templayout.yaxis = { range: [50, 80], type:'linear', gridcolor: "#354f52" }
+templayout.yaxis = { range: [40, 90], type:'linear', gridcolor: "#354f52" }
 
 var humlayout = Object.create(layout);
 humlayout.yaxis = { range: [30, 70], type:'linear', gridcolor: "#354f52" }

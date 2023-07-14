@@ -1,4 +1,5 @@
 import wifi
+import network
 import ntptime
 import machine
 import utime

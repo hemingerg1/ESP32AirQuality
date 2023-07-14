@@ -24,16 +24,17 @@ def reconnect():
 
 def internet_check():
     import urequests
+    import logger
+    log = logger.get_logger()
     r = urequests.get('https://www.google.com')
     if r.status_code == 200:
         r.close()
+        log.info('Internet connection is good.')
     else:
         r.close()
-        import logger
-        log = logger.get_logger()
-        log.WARN('No internet connection. Attempting to reconnect now.')
+        log.warn('No internet connection. Attempting to reconnect now.')
         reconnect()
-        log.INFO('WIFI reconnected')
+        log.info('WIFI reconnected')
 
 
    

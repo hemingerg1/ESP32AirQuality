@@ -130,7 +130,7 @@ async def get_data():
     data['mem_usedp'].append(round(data['mem_used'] / data['mem_tot'] , 2))
 
     if data['mem_usedp'][-1] >= 0.8:
-        log.WARN(f'Memory useage is high. Percent mem used = {data["mem_usedp"][-1]}')
+        log.warn(f'Memory useage is high. Percent mem used = {data["mem_usedp"][-1]}')
 
     t = time.localtime()
     loc_tim = f'{t[3]}:{t[4]}:{t[5]}'
@@ -272,7 +272,7 @@ async def update_readings(data_sample_time=data_sample_time):
         l_count += 1
         await uasyncio.create_task(get_data())
         await uasyncio.sleep(data_sample_time)
-        if l_count >= 4:
+        if l_count >= 20:
             wifi.internet_check()
             l_count = 0
 
