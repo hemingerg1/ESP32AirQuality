@@ -166,7 +166,7 @@ async def get_data():
                 log.info('Get last telegram')
                 m, t = getLastMessage()
                 m = m.lower()
-                if m == 'c' and t > time.time() - (data_sample_time * 2) and teleDoorClosed == False:
+                if m == 'c' and t > time.time() - (data_sample_time * 3) + 946699199 and teleDoorClosed == False:
                     teleDoorClosed = True
                     uasyncio.create_task(closeGarageDoor())
         elif p.value() == 0 and data[f'{d}sat'] != 'closed': # door just closed
