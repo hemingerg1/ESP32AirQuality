@@ -17,7 +17,7 @@ file_handler = ulogger.Handler(
     clock=clock,
     direction=ulogger.TO_FILE,
     file_name='log.txt',
-    max_file_size=4096)
+    max_file_size=12288)
 
 def get_logger(name=__name__):
     return ulogger.Logger(name, handlers=[file_handler])

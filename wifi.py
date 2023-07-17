@@ -29,7 +29,6 @@ def internet_check():
     r = urequests.get('https://www.google.com')
     if r.status_code == 200:
         r.close()
-        log.info('Internet connection is good.')
     else:
         r.close()
         log.warn('No internet connection. Attempting to reconnect now.')

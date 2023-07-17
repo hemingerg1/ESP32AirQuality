@@ -13,7 +13,7 @@ import logger
 import wifi
 
 data_sample_time = const(15) # frequency to take data readings, in seconds
-max_hist_length = const(30) # max number of data point to keep
+max_hist_length = const(120) # max number of data point to keep
 door_alert_time = const(40) # time to wait before alerting of door remaining open, in number of data samplings
 pm_alert_level = const(50) # if pm2.5 goes above this, sends telegram alert 
 aq_alert_level = const(70) # if air quality drops below this, sends telegram alert
@@ -73,6 +73,7 @@ def getLastMessage():
     if r.json()['result']:
         text = r.json()['result'][-1]['message']['text']
         time = r.json()['result'][-1]['message']['date']
+        log.info(f'got last telegram: "{text}"')
     else:
         text = ''
         time = 0
@@ -162,6 +163,7 @@ async def get_data():
                     uasyncio.create_task(sendTelegram('GARAGE\'S INSIDE DOOR TO SHOP has been left open.'))
                     await uasyncio.sleep(2)
             elif d == 'Ldoor' and data[f'{d}time'] > door_alert_time: # check for telegram request to close door
+                log.info('Get last telegram')
                 m, t = getLastMessage()
                 m = m.lower()
                 if m == 'c' and t > time.time() - (data_sample_time * 2) and teleDoorClosed == False:
@@ -174,7 +176,7 @@ async def get_data():
 
     # send telegram alert if PM is too high
     if data['pm25_env'][-1] is not None and data['pm25_env'][-1] > pm_alert_level:
-        if not pm_alerted:
+        if pm_alerted == False:
             sendTelegram(f'PM is high.  PM = {data["pm25_env"][-1]}')
             pm_alerted = True
     else:
@@ -182,7 +184,7 @@ async def get_data():
     
     # send telegram alert if Air Quality is poor
     if len(data['aq']) > 0 and data['aq'][-1] < aq_alert_level:
-        if not aq_alerted:
+        if aq_alerted == False:
             sendTelegram(f'Air Quality is poor.  AQ = {data["aq"][-1]}')
             aq_alerted = True
     elif len(data['aq']) > 0 and data['aq'][-1] > aq_alert_level + 10:

@@ -158,7 +158,7 @@ tr:last-of-type td:last-of-type {
 	color: var(--background);
 	margin-top: 10px;
 	width: 100%;
-	height: fit-content;
+	height: 100%;
 	padding: 5px;
 }
 .log h3 {
