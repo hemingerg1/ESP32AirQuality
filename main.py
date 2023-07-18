@@ -19,7 +19,8 @@ pm_alert_level = const(50) # if pm2.5 goes above this, sends telegram alert
 aq_alert_level = const(70) # if air quality drops below this, sends telegram alert
 pm_alerted = False
 aq_alerted = False
-teleDoorClosed = False
+teleDoorClosing = False
+last_message_time = 0
 
 # Initialize Logger
 log = logger.get_logger()
@@ -102,7 +103,7 @@ async def closeGarageDoor():
 
 # updates data with latest readings
 async def get_data():
-    global max_hist_length, pm_alert_level, aq_alert_level, pm_alerted, aq_alerted, teleDoorClosed
+    global max_hist_length, pm_alert_level, aq_alert_level, pm_alerted, aq_alerted, teleDoorClosing, last_message_time
 
     data['tempc'] = round(bme.temperature, 2) + temp_offset
     data['tempf'].append(round((data['tempc'] * (9/5)) + 32, 1))
@@ -166,13 +167,14 @@ async def get_data():
                 log.info('Get last telegram')
                 m, t = getLastMessage()
                 m = m.lower()
-                if m == 'c' and t > time.time() - (data_sample_time * 3) + 946699199 and teleDoorClosed == False:
-                    teleDoorClosed = True
+                if m == 'c' and t > last_message_time and teleDoorClosing == False:
+                    teleDoorClosing = True
                     uasyncio.create_task(closeGarageDoor())
+                last_message_time = t
         elif p.value() == 0 and data[f'{d}sat'] != 'closed': # door just closed
             data[f'{d}sat'] = 'closed'
             data[f'{d}time'] = 0
-            teleDoorClosed = False
+            teleDoorClosing = False
 
     # send telegram alert if PM is too high
     if data['pm25_env'][-1] is not None and data['pm25_env'][-1] > pm_alert_level:
