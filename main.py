@@ -74,7 +74,6 @@ def getLastMessage():
     if r.json()['result']:
         text = r.json()['result'][-1]['message']['text']
         time = r.json()['result'][-1]['message']['date']
-        log.info(f'got last telegram: "{text}"')
     else:
         text = ''
         time = 0
@@ -86,19 +85,19 @@ def getLastMessage():
 async def closeGarageDoor():
     global Ldoor
     if Ldoor.value() == 1:
-        sendTelegram('Closing garage door now...')
+        uasyncio.create_task(sendTelegram('Closing garage door now...'))
         ####### TO DO: need to figure out hardware side to impliment closing the door ############
         c = 0
         while Ldoor.value() == 1:
             if c >= 12:
-                sendTelegram('Garage door did not close succesfully. Timed out.')
+                uasyncio.create_task(sendTelegram('Garage door did not close succesfully. Timed out.'))
                 break
             await uasyncio.sleep(5)
             c += 1
         if Ldoor.value() == 0:
-            sendTelegram('Garage door closed successfully')
+            uasyncio.create_task(sendTelegram('Garage door closed successfully'))
     else:
-        sendTelegram('Door already closed. Doing nothing.')
+        uasyncio.create_task(sendTelegram('Door already closed. Doing nothing.'))
     return
 
 # updates data with latest readings
@@ -152,8 +151,10 @@ async def get_data():
             data[f'{d}time'] += 1
             if data[f'{d}time'] == door_alert_time:
                 if d == 'Ldoor':
+                    m, t = getLastMessage()
+                    last_message_time = t
                     uasyncio.create_task(sendTelegram('LARGE GARAGE DOOR has been left open.  Reply "c" to close.'))
-                    await uasyncio.sleep(2)
+                    await uasyncio.sleep(2)                    
                 elif d == 'Sdoor':
                     uasyncio.create_task(sendTelegram('SMALL GARAGE DOOR has been left open.'))
                     await uasyncio.sleep(2)
@@ -164,7 +165,6 @@ async def get_data():
                     uasyncio.create_task(sendTelegram('GARAGE\'S INSIDE DOOR TO SHOP has been left open.'))
                     await uasyncio.sleep(2)
             elif d == 'Ldoor' and data[f'{d}time'] > door_alert_time: # check for telegram request to close door
-                log.info('Get last telegram')
                 m, t = getLastMessage()
                 m = m.lower()
                 if m == 'c' and t > last_message_time and teleDoorClosing == False:
@@ -179,15 +179,15 @@ async def get_data():
     # send telegram alert if PM is too high
     if data['pm25_env'][-1] is not None and data['pm25_env'][-1] > pm_alert_level:
         if pm_alerted == False:
-            sendTelegram(f'PM is high.  PM = {data["pm25_env"][-1]}')
+            uasyncio.create_task(sendTelegram(f'PM is high.  PM = {data["pm25_env"][-1]}'))
             pm_alerted = True
-    else:
+    elif data['pm25_env'][-1] is not None and data['pm25_env'][-1] < pm_alert_level - 5:
         pm_alerted = False
     
     # send telegram alert if Air Quality is poor
     if len(data['aq']) > 0 and data['aq'][-1] < aq_alert_level:
         if aq_alerted == False:
-            sendTelegram(f'Air Quality is poor.  AQ = {data["aq"][-1]}')
+            uasyncio.create_task(sendTelegram(f'Air Quality is poor.  AQ = {data["aq"][-1]}'))
             aq_alerted = True
     elif len(data['aq']) > 0 and data['aq'][-1] > aq_alert_level + 10:
         aq_alerted = False
