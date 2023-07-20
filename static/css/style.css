@@ -9,47 +9,50 @@
 
 
 * {
-  box-sizing: border-box;
+	box-sizing: border-box;
 }
 
-body {  
-  margin: 0;
-  font-family: 'Arial', sans-serif;
-  background-color: var(--background);
+body {
+	margin: 0;
+	font-family: 'Arial', sans-serif;
+	background-color: var(--background);
 }
 
 /* Style the side navigation */
 .sidebar {
-  position: fixed;
-  height: 100%;
-  width: 200px;
-  z-index: 1;
-  top: 0;
-  left: 0;
-  background-color: var(--c2);
-  overflow-x: hidden;
+	position: fixed;
+	height: 100%;
+	width: 200px;
+	z-index: 1;
+	top: 0;
+	left: 0;
+	background-color: var(--c2);
+	overflow-x: hidden;
 }
+
 /* Side navigation links */
 .sidebar a {
-  color: var(--text);
-  padding: 16px;
-  text-decoration: none;
-  display: block;
+	color: var(--text);
+	padding: 16px;
+	text-decoration: none;
+	display: block;
 }
+
 /* Change color on hover */
 .sidebar a:hover {
-  background-color: var(--c1);
-  color: var(--text);
+	background-color: var(--c1);
+	color: var(--text);
 }
 
 /* style the memory usage data */
 #side_mem {
-  position: absolute;
-  bottom: 10px;
-  left: 10px;
-  color: var(--text);
-  font-size: 12px;
+	position: absolute;
+	bottom: 10px;
+	left: 10px;
+	color: var(--text);
+	font-size: 12px;
 }
+
 #mem_meter {
 	width: 180px;
 }
@@ -57,10 +60,10 @@ body {
 
 /* Style the content */
 .content {
-  height: 100vh;
-  margin-left: 200px;
-  padding: 20px;
-  }
+	height: 100vh;
+	margin-left: 200px;
+	padding: 20px;
+}
 
 /* for displaying the current readings on top of home page */
 .flex_current {
@@ -69,41 +72,46 @@ body {
 	justify-content: space-between;
 	flex-wrap: wrap;
 }
-.flex_current .flex_box{
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  flex-grow: 1;
-  background: var(--c3);
-  border: 3px solid var(--c2);
-  border-radius: 12px;
-  padding: 5px 0 5px;
-  margin: 0 10px 10px;
+
+.flex_current .flex_box {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-direction: column;
+	flex-grow: 1;
+	background: var(--c3);
+	border: 3px solid var(--c2);
+	border-radius: 12px;
+	padding: 5px 0 5px;
+	margin: 0 10px 10px;
 }
-.flex_current .box-topic{
+
+.flex_current .box-topic {
 	font-size: 20px;
 	color: var(--c1);
 }
-.flex_current .number{
+
+.flex_current .number {
 	font-size: 35px;
 	color: var(--text);
 }
-.flex_current .box_table{
+
+.flex_current .box_table {
 	margin: 10px 0;
 }
 
 
 /* for historic charts on home page */
-.flex_charts{
+.flex_charts {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
 	width: 100%;
-	height: 550px;
-	margin: 10px 0;
+	height: 700px;
+	margin: 20px 0;
 }
-.flex_charts .chart_column{
+
+.flex_charts .chart_column {
 	display: flex;
 	flex-direction: column;
 	align-items: center;
@@ -113,40 +121,49 @@ body {
 	max-width: 50%;
 	color: var(--text);
 	text-align: center;
+	margin-bottom: 10px;
 }
 
 
 /* style all tables */
 table {
-border:1px solid #000;
-border-collapse:collapse;
-text-align:center;
+	border: 1px solid #000;
+	border-collapse: collapse;
+	text-align: center;
 }
+
 th {
-background: var(--c1);
+	background: var(--c1);
 }
+
 td {
-background: var(--c2);
+	background: var(--c2);
 }
-th, td {
-color:  var(--text);
-border:1px solid #000;
-padding-top: 5px;
-padding-bottom: 5px;
-padding-left: 30px;
-padding-right: 30px;
+
+th,
+td {
+	color: var(--text);
+	border: 1px solid #000;
+	padding-top: 5px;
+	padding-bottom: 5px;
+	padding-left: 30px;
+	padding-right: 30px;
 }
+
 th:first-of-type {
-  border-top-left-radius: 10px;
+	border-top-left-radius: 10px;
 }
+
 th:last-of-type {
-  border-top-right-radius: 10px;
+	border-top-right-radius: 10px;
 }
+
 tr:last-of-type td:first-of-type {
-  border-bottom-left-radius: 10px;
+	border-bottom-left-radius: 10px;
 }
+
 tr:last-of-type td:last-of-type {
-  border-bottom-right-radius: 10px;
+	border-bottom-right-radius: 10px;
 }
 
 /* log page */
@@ -162,27 +179,31 @@ tr:last-of-type td:last-of-type {
 	height: 100%;
 	padding: 5px;
 }
+
 .log h3 {
 	margin: 0 0 5px 0;
 }
 
 /* clock page */
-.current_time{
+.current_time {
 	color: var(--text)
 }
-.time_input{
+
+.time_input {
 	display: flex;
 	flex-direction: column;
 	background-color: var(--c3);
 	border: 3px solid var(--c2);
-    border-radius: 12px;
+	border-radius: 12px;
 	color: var(--text);
 	margin-right: auto;
 	width: fit-content;
 }
-.time_input h3{
+
+.time_input h3 {
 	padding: 0 0 0 10px;
 }
+
 .time_input form {
 	padding: 0 30px 30px 30px;
 }
@@ -196,25 +217,30 @@ tr:last-of-type td:last-of-type {
 		height: auto;
 		position: relative;
 	}
+
 	.sidebar a {
 		text-align: center;
 		float: none;
 	}
+
 	#side_mem {
 		position: static;
 		padding: 10px 10px 2px;
 	}
+
 	.content {
 		height: auto;
 		margin-left: 0;
 		padding: 20px 10px;
 	}
-	.flex_charts{
+
+	.flex_charts {
 		flex-wrap: wrap;
 		width: 100%;
-		height: auto;
+		height: 450px;
 	}
-	.flex_charts .chart_column{	
+
+	.flex_charts .chart_column {
 		max-width: 100%;
 		width: 100%;
 	}
