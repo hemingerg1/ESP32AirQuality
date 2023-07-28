@@ -7,23 +7,20 @@ import bme680
 import bme680AQ
 import pms5003
 from microdot_asyncio import Microdot, Response, send_file
-import secrets
-import urequests
-import logger
-import wifi
+import aqUtils
 
-data_sample_time = const(15) # frequency to take data readings, in seconds
-max_hist_length = const(120) # max number of data point to keep
-door_alert_time = const(40) # time to wait before alerting of door remaining open, in number of data samplings
-pm_alert_level = const(50) # if pm2.5 goes above this, sends telegram alert 
-aq_alert_level = const(70) # if air quality drops below this, sends telegram alert
+data_sample_time = const(60)  # frequency to take data readings, in seconds
+max_hist_length = const(120)  # max number of data point to keep time to wait before alerting of door remaining open, in number of data samplings
+door_alert_time = const(40)
+pm_alert_level = const(50)  # if pm2.5 goes above this, sends telegram alert if air quality drops below this, sends telegram alert
+aq_alert_level = const(70)
 pm_alerted = False
 aq_alerted = False
 teleDoorClosing = False
 last_message_time = 0
 
 # Initialize Logger
-log = logger.get_logger()
+log = aqUtils.get_logger()
 
 # Initialize MicroDot
 app = Microdot()
@@ -33,72 +30,35 @@ Response.default_content_type = 'text/html'
 bme_i2c = SoftI2C(scl=Pin(27), sda=Pin(26))
 bme = bme680.BME680_I2C(i2c=bme_i2c)
 # Initialize IAQ calculator
-iaq_tracker = bme680AQ.IAQTracker(burn_in_cycles = 100)
+iaq_tracker = bme680AQ.IAQTracker(burn_in_cycles=100)
 # applies an offset to BME680 temperature reading for calibration
 temp_offset = -3.3
 
 # Intialize PMS5003
 pms_uart = UART(1, tx=14, rx=25, baudrate=9600)
 pin27 = Pin(13, Pin.OUT)
-pm = pms5003.PMS5003(pms_uart, reset_pin=pin27, active_mode=False, interval_passive_mode=20, eco_mode=False)
+pm = pms5003.PMS5003(pms_uart, reset_pin=pin27, active_mode=False,
+                     interval_passive_mode=20, eco_mode=False)
 
 # Intialize GPIO pins
-## for doors, value of high or 1 means door is open
+# for doors, value of high or 1 means door is open
 Ldoor = Pin(23, Pin.IN, Pin.PULL_UP)
 Sdoor = Pin(22, Pin.IN, Pin.PULL_UP)
 HOdoor = Pin(21, Pin.IN, Pin.PULL_UP)
 HIdoor = Pin(19, Pin.IN, Pin.PULL_UP)
 
 
-data = {'tempc':0, 'tempf':[], 'hum':[], 'pres':0, 'gas_res':0, 'aq':[], 
-        'pm10_std':0, 'pm25_std':0, 'pm100_std':0, 'pm10_env':[], 'pm25_env':[], 'pm100_env':[], 
-        'pm3':0, 'pm5':0, 'pm10':0, 'pm25':0, 'pm50':0, 'pm100':0,
-        'mem_used':0, 'mem_free':0, 'mem_tot':0, 'mem_usedp':[], 'time':[],
-        'Ldoorsat':'', 'Ldoortime':0, 'Sdoorsat':'', 'Sdoortime':0,
-        'HOdoorsat':'', 'HOdoortime':0, 'HIdoorsat':'', 'HIdoortime':0}
-data_lists = ['tempf', 'hum', 'aq', 'pm10_env', 'pm25_env', 'pm100_env', 'mem_usedp', 'time']
-door_list = {'Ldoor':Ldoor, 'Sdoor':Sdoor, 'HOdoor':HOdoor, 'HIdoor':HIdoor}
+data = {'tempc': 0, 'tempf': [], 'hum': [], 'pres': 0, 'gas_res': 0, 'aq': [],
+        'pm10_std': 0, 'pm25_std': 0, 'pm100_std': 0, 'pm10_env': [], 'pm25_env': [], 'pm100_env': [],
+        'pm3': 0, 'pm5': 0, 'pm10': 0, 'pm25': 0, 'pm50': 0, 'pm100': 0,
+        'mem_used': 0, 'mem_free': 0, 'mem_tot': 0, 'mem_usedp': [], 'time': [],
+        'Ldoorsat': '', 'Ldoortime': 0, 'Sdoorsat': '', 'Sdoortime': 0,
+        'HOdoorsat': '', 'HOdoortime': 0, 'HIdoorsat': '', 'HIdoortime': 0}
+data_lists = ['tempf', 'hum', 'aq', 'pm10_env',
+              'pm25_env', 'pm100_env', 'mem_usedp', 'time']
+door_list = {'Ldoor': Ldoor, 'Sdoor': Sdoor,
+             'HOdoor': HOdoor, 'HIdoor': HIdoor}
 
-# sends a message from telegram bot to the chat
-async def sendTelegram(message):
-    r = urequests.post(f'https://api.telegram.org/bot{secrets.TELEGRAM_TOKEN}/sendMessage?chat_id={secrets.TELEGRAM_CHAT_ID}&text={message}')
-    r.close()
-    log.info(f'Telegram sent. Message = "{message}"')
-    gc.collect()
-    return
-
-# get the last massage in the chat sent to telegram bot
-def getLastMessage():
-    url = f'https://api.telegram.org/bot{secrets.TELEGRAM_TOKEN}/getUpdates?offset=-1'
-    r = urequests.get(url)
-    if r.json()['result']:
-        text = r.json()['result'][-1]['message']['text']
-        time = r.json()['result'][-1]['message']['date']
-    else:
-        text = ''
-        time = 0
-    r.close()
-    gc.collect()
-    return text, time
-
-# closes garage door
-async def closeGarageDoor():
-    global Ldoor
-    if Ldoor.value() == 1:
-        uasyncio.create_task(sendTelegram('Closing garage door now...'))
-        ####### TO DO: need to figure out hardware side to impliment closing the door ############
-        c = 0
-        while Ldoor.value() == 1:
-            if c >= 12:
-                uasyncio.create_task(sendTelegram('Garage door did not close succesfully. Timed out.'))
-                break
-            await uasyncio.sleep(5)
-            c += 1
-        if Ldoor.value() == 0:
-            uasyncio.create_task(sendTelegram('Garage door closed successfully'))
-    else:
-        uasyncio.create_task(sendTelegram('Door already closed. Doing nothing.'))
-    return
 
 # updates data with latest readings
 async def get_data():
@@ -110,7 +70,8 @@ async def get_data():
     data['pres'] = round(bme.pressure/1000, 2)
     data['gas_res'] = bme.gas
     try:
-        data['aq'].append(round(iaq_tracker.getIAQ(temp=data['tempc'], hum=data['hum'][-1], R_gas=data['gas_res'])))
+        data['aq'].append(round(iaq_tracker.getIAQ(
+            temp=data['tempc'], hum=data['hum'][-1], R_gas=data['gas_res'])))
     except:
         pass
     data['pm10_std'] = pm.pm10_standard
@@ -128,10 +89,11 @@ async def get_data():
     data['mem_used'] = round(gc.mem_alloc() / 1000, 1)
     data['mem_free'] = round(gc.mem_free() / 1000, 1)
     data['mem_tot'] = data['mem_used'] + data['mem_free']
-    data['mem_usedp'].append(round(data['mem_used'] / data['mem_tot'] , 2))
+    data['mem_usedp'].append(round(data['mem_used'] / data['mem_tot'], 2))
 
     if data['mem_usedp'][-1] >= 0.8:
-        log.warn(f'Memory useage is high. Percent mem used = {data["mem_usedp"][-1]}')
+        log.warn(
+            f'Memory useage is high. Percent mem used = {data["mem_usedp"][-1]}')
 
     t = time.localtime()
     loc_tim = f'{t[3]}:{t[4]}:{t[5]}'
@@ -144,34 +106,36 @@ async def get_data():
 
     # check status of doors
     for d, p in door_list.items():
-        if p.value() == 1 and data[f'{d}sat'] != 'open': # door just opened
+        if p.value() == 1 and data[f'{d}sat'] != 'open':  # door just opened
             data[f'{d}sat'] = 'open'
             data[f'{d}time'] = 0
-        elif p.value() == 1 and data[f'{d}sat'] == 'open': # door has been open
+        # door has been open
+        elif p.value() == 1 and data[f'{d}sat'] == 'open':
             data[f'{d}time'] += 1
             if data[f'{d}time'] == door_alert_time:
                 if d == 'Ldoor':
-                    m, t = getLastMessage()
+                    m, t = aqUtils.getLastMessage()
                     last_message_time = t
-                    uasyncio.create_task(sendTelegram('LARGE GARAGE DOOR has been left open.  Reply "c" to close.'))
-                    await uasyncio.sleep(2)                    
+                    uasyncio.create_task(aqUtils.sendTelegram('LARGE GARAGE DOOR has been left open.  Reply "c" to close.'))
+                    await uasyncio.sleep(2)
                 elif d == 'Sdoor':
-                    uasyncio.create_task(sendTelegram('SMALL GARAGE DOOR has been left open.'))
+                    uasyncio.create_task(aqUtils.sendTelegram('SMALL GARAGE DOOR has been left open.'))
                     await uasyncio.sleep(2)
                 elif d == 'HOdoor':
-                    uasyncio.create_task(sendTelegram('GARAGE\'S OUTSIDE WALK-IN DOOR has been left open.'))
+                    uasyncio.create_task(aqUtils.sendTelegram('GARAGE\'S OUTSIDE WALK-IN DOOR has been left open.'))
                     await uasyncio.sleep(2)
                 elif d == 'HIdoor':
-                    uasyncio.create_task(sendTelegram('GARAGE\'S INSIDE DOOR TO SHOP has been left open.'))
+                    uasyncio.create_task(aqUtils.sendTelegram('GARAGE\'S INSIDE DOOR TO SHOP has been left open.'))
                     await uasyncio.sleep(2)
-            elif d == 'Ldoor' and data[f'{d}time'] > door_alert_time: # check for telegram request to close door
-                m, t = getLastMessage()
+            # check for telegram request to close door
+            elif d == 'Ldoor' and data[f'{d}time'] > door_alert_time:
+                m, t = aqUtils.getLastMessage()
                 m = m.lower()
                 if m == 'c' and t > last_message_time and teleDoorClosing == False:
                     teleDoorClosing = True
-                    uasyncio.create_task(closeGarageDoor())
+                    uasyncio.create_task(aqUtils.closeGarageDoor())
                 last_message_time = t
-        elif p.value() == 0 and data[f'{d}sat'] != 'closed': # door just closed
+        elif p.value() == 0 and data[f'{d}sat'] != 'closed':  # door just closed
             data[f'{d}sat'] = 'closed'
             data[f'{d}time'] = 0
             teleDoorClosing = False
@@ -179,46 +143,54 @@ async def get_data():
     # send telegram alert if PM is too high
     if data['pm25_env'][-1] is not None and data['pm25_env'][-1] > pm_alert_level:
         if pm_alerted == False:
-            uasyncio.create_task(sendTelegram(f'PM is high.  PM = {data["pm25_env"][-1]}'))
+            uasyncio.create_task(aqUtils.sendTelegram(
+                f'PM is high.  PM = {data["pm25_env"][-1]}'))
             pm_alerted = True
     elif data['pm25_env'][-1] is not None and data['pm25_env'][-1] < pm_alert_level - 5:
         pm_alerted = False
-    
+
     # send telegram alert if Air Quality is poor
     if len(data['aq']) > 0 and data['aq'][-1] < aq_alert_level:
         if aq_alerted == False:
-            uasyncio.create_task(sendTelegram(f'Air Quality is poor.  AQ = {data["aq"][-1]}'))
+            uasyncio.create_task(aqUtils.sendTelegram(
+                f'Air Quality is poor.  AQ = {data["aq"][-1]}'))
             aq_alerted = True
     elif len(data['aq']) > 0 and data['aq'][-1] > aq_alert_level + 10:
         aq_alerted = False
-     
+
     return
 
 
-# Microdot web pages
+###### Microdot web pages ######
 @app.route('/')
 async def home_pg(request):
     return send_file('static/html/home.html')
+
 
 @app.route('/sensors')
 async def sensors_pg(request):
     return send_file('static/html/sensors.html')
 
+
 @app.route('/dash')
 async def dash_pg(request):
     return send_file('static/html/dash.html')
+
 
 @app.route('/cam')
 async def cam_pg(request):
     return send_file('static/html/cam.html')
 
+
 @app.route('/log')
 async def log_pg(request):
     return send_file('static/html/log.html')
 
+
 @app.route('/clock', methods=['GET'])
 async def clock_pg(request):
     return send_file('static/html/clock.html')
+
 
 @app.route('/clock', methods=['POST'])
 async def clock_set(request):
@@ -232,21 +204,26 @@ async def clock_set(request):
     RTC().datetime(dt)
     return
 
-#send RTC time in json
+
+# send RTC time in json
 @app.route('/rtc')
 async def tim(request):
     t = time.localtime()
-    current_time = {'year': t[0], 'month': t[1], 'day': t[2], 'hour': t[3], 'min': t[4], 'sec': t[5]}
+    current_time = {'year': t[0], 'month': t[1],
+                    'day': t[2], 'hour': t[3], 'min': t[4], 'sec': t[5]}
     return current_time
 
-#send data to js script
+
+# send data to js script
 @app.route('/data')
 async def data_send(rquest):
     return data
 
+
 @app.after_request
 async def mem_collect(request, response):
     gc.collect()
+
 
 # can use this route to shutdown the server
 @app.route('/shutdown')
@@ -255,6 +232,7 @@ async def shutdown(request):
     log.info('Server shutdown by /shutdown route')
     return 'The server is shutting down...'
 
+
 # sends the static files (html,css,javascript)
 @app.route('/static/<path:path>')
 async def static(request, path):
@@ -262,6 +240,7 @@ async def static(request, path):
         # don't allow moving up directories
         return 'Not found', 404
     return send_file('static/' + path)
+
 
 # sends log file
 @app.route('/log.txt')
@@ -277,20 +256,21 @@ async def update_readings(data_sample_time=data_sample_time):
         await uasyncio.create_task(get_data())
         await uasyncio.sleep(data_sample_time)
         if l_count >= 20:
-            wifi.internet_check()
+            aqUtils.internet_check()
             l_count = 0
 
-# create main async loop   
+
+# create main async loop
 async def main():
     data_task = uasyncio.create_task(update_readings())
     app_task = uasyncio.create_task(app.start_server(debug=False, port=80))
     await uasyncio.gather(data_task, app_task)
-    
+
 uasyncio.run(main())
-    
+
 
 ########## BME680 #########
-# sensor pin      ESP32 pin 
+# sensor pin      ESP32 pin
 # Vin             3.3V
 # GND             GND
 # SCL             GPIO 27
@@ -298,18 +278,9 @@ uasyncio.run(main())
 
 
 ######### PMS5003 #########
-# sensor pin      ESP32 pin 
+# sensor pin      ESP32 pin
 # Vcc             +5V
 # GND             GND
 # RXD             GPIO 14
 # TXD             GPIO 25
 # RESET           GPIO 13
-
-##### can use to send email alerts
-#import umail
-#def send_email(message):
-#    smtp = umail.SMTP('smtp.gmail.com', 587, username=secrets.EMAIL_ADDRESS, password=secrets.EMAIL_PASSWORD)
-#    smtp.to(secrets.email_address)
-#    smtp.send(message)
-#    smtp.quit()
-#    gc.collect()

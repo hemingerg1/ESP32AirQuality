@@ -1,4 +1,4 @@
-import wifi
+import aqUtils
 import network
 import ntptime
 import machine
@@ -9,7 +9,7 @@ timeZoneOffset = 4
 ap = network.WLAN(network.AP_IF)
 ap.active(False)
 
-wifi.do_connect()
+aqUtils.do_connect()
 
 try:
     ntptime.host = 'time.google.com'
