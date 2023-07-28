@@ -51,7 +51,7 @@ $(function () {
 		colorway: ["#A2c799", "#99a2c7", "#c799a2"],
 		width: chartWidth,
 		height: chartHeight,
-		margin: { t: 1, b: 60 },
+		margin: { t: 20, b: 60, r: 10, l: 20 },
 		modebar: { orientation: "v" },
 		xaxis: { gridcolor: "#354f52" },
 		showlegend: false,
@@ -59,12 +59,15 @@ $(function () {
 
 	var templayout = Object.create(layout);
 	templayout.yaxis = { range: [40, 90], type: 'linear', gridcolor: "#354f52" }
+	templayout.title = { text: 'Temperature' }
 
 	var humlayout = Object.create(layout);
 	humlayout.yaxis = { range: [30, 70], type: 'linear', gridcolor: "#354f52" }
+	humlayout.title = { text: 'Humidity' }
 
 	var pmlayout = Object.create(layout);
 	pmlayout.yaxis = { range: [0, 60], type: 'linear', gridcolor: "#354f52" }
+	pmlayout.title = { text: 'PM' }
 	pmlayout.shapes = [{
 		type: 'line',
 		xref: 'paper',
@@ -94,6 +97,7 @@ $(function () {
 
 	var aqlayout = Object.create(layout);
 	aqlayout.yaxis = { range: [50, 100], type: 'linear', gridcolor: "#354f52" }
+	aqlayout.title = { text: 'Air Quality' }
 	aqlayout.shapes = [{
 		type: 'line',
 		xref: 'paper',
