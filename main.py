@@ -11,7 +11,7 @@ import aqUtils
 
 data_sample_time = const(60)  # frequency to take data readings, in seconds
 max_hist_length = const(120)  # max number of data point to keep time to wait before alerting of door remaining open, in number of data samplings
-door_alert_time = const(40)
+door_alert_time = const(15)
 pm_alert_level = const(50)  # if pm2.5 goes above this, sends telegram alert if air quality drops below this, sends telegram alert
 aq_alert_level = const(70)
 pm_alerted = False
