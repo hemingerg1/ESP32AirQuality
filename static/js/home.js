@@ -58,15 +58,15 @@ $(function () {
 	};
 
 	var templayout = Object.create(layout);
-	//templayout.yaxis = { range: [40, 90], type: 'linear', gridcolor: "#354f52" }
+	templayout.yaxis = { range: [40, 90], type: 'linear', gridcolor: "#354f52" }
 	templayout.title = { text: 'Temperature' }
 
 	var humlayout = Object.create(layout);
-	//humlayout.yaxis = { range: [30, 70], type: 'linear', gridcolor: "#354f52" }
+	humlayout.yaxis = { range: [30, 70], type: 'linear', gridcolor: "#354f52" }
 	humlayout.title = { text: 'Humidity' }
 
 	var pmlayout = Object.create(layout);
-	//pmlayout.yaxis = { range: [0, 60], type: 'linear', gridcolor: "#354f52" }
+	pmlayout.yaxis = { range: [0, 60], type: 'linear', gridcolor: "#354f52" }
 	pmlayout.title = { text: 'PM' }
 	pmlayout.shapes = [{
 		type: 'line',
@@ -96,7 +96,7 @@ $(function () {
 	}]
 
 	var aqlayout = Object.create(layout);
-	//aqlayout.yaxis = { range: [50, 100], type: 'linear', gridcolor: "#354f52" }
+	aqlayout.yaxis = { range: [50, 100], type: 'linear', gridcolor: "#354f52" }
 	aqlayout.title = { text: 'Air Quality' }
 	aqlayout.shapes = [{
 		type: 'line',
@@ -161,16 +161,16 @@ $(function () {
 		var maxPM25 = Math.max(Math.ceil(Math.max(jsonData.pm25_env)) + 2, 60);
 
 		// Update chart ranges
-		templayout.yaxis = { range: [minTemp, maxTemp], type: 'linear', gridcolor: "#354f52" };
-		humlayout.yaxis = { range: [minHum, maxHum], type: 'linear', gridcolor: "#354f52" };
-		aqlayout.yaxis = { range: [minAQ, maxAQ], type: 'linear', gridcolor: "#354f52" };
-		pmlayout.yaxis = { range: [minPM25, maxPM25], type: 'linear', gridcolor: "#354f52" };
+		var tempUpdate = { 'yaxis.range': [minTemp, maxTemp] };
+		var humUpdate = { 'yaxis.range': [minHum, maxHum] };
+		var aqUpdate = { 'yaxis.range': [minAQ, maxAQ] };
+		var pmUpdate = { 'yaxis.range': [minPM25, maxPM25] };
 
 		// Update plots
-		Plotly.update(tempChartDiv, { x: [jsonData.time], y: [jsonData.tempf] }, templayout);
-		Plotly.update(humChartDiv, { x: [jsonData.time], y: [jsonData.hum] }, humlayout);
-		Plotly.update(aqChartDiv, { x: [jsonData.time], y: [jsonData.aq] }, aqlayout);
-		Plotly.update(pmChartDiv, { x: [jsonData.time], y: [jsonData.pm25_env] }, pmlayout);
+		Plotly.update(tempChartDiv, { x: [jsonData.time], y: [jsonData.tempf] }, tempUpdate);
+		Plotly.update(humChartDiv, { x: [jsonData.time], y: [jsonData.hum] }, humUpdate);
+		Plotly.update(aqChartDiv, { x: [jsonData.time], y: [jsonData.aq] }, aqUpdate);
+		Plotly.update(pmChartDiv, { x: [jsonData.time], y: [jsonData.pm25_env] }, pmUpdate);
 
 		warning_coloring();
 		console.log("updated data")
