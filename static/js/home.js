@@ -151,14 +151,14 @@ $(function () {
 		$("#pm100").text(jsonData.pm100_env.at(-1));
 
 		// Find min and max values
-		var minTemp = Math.floor(Math.min(jsonData.tempf)) - 2;
-		var maxTemp = Math.ceil(Math.max(jsonData.tempf)) + 2;
-		var minHum = Math.floor(Math.min(jsonData.hum)) - 2;
-		var maxHum = Math.ceil(Math.max(jsonData.hum)) + 2;
-		var minAQ = Math.min(Math.floor(Math.min(jsonData.aq)) - 2, 70);
+		var minTemp = Math.floor(Math.min(...jsonData.tempf)) - 2;
+		var maxTemp = Math.ceil(Math.max(...jsonData.tempf)) + 2;
+		var minHum = Math.floor(Math.min(...jsonData.hum)) - 2;
+		var maxHum = Math.ceil(Math.max(...jsonData.hum)) + 2;
+		var minAQ = Math.min(Math.floor(Math.min(...jsonData.aq)) - 2, 70);
 		var maxAQ = 100;
 		var minPM25 = 0;
-		var maxPM25 = Math.max(Math.ceil(Math.max(jsonData.pm25_env)) + 2, 60);
+		var maxPM25 = Math.max(Math.ceil(Math.max(...jsonData.pm25_env)) + 2, 60);
 
 		// Update chart ranges
 		var tempUpdate = { 'yaxis.range': [minTemp, maxTemp] };
