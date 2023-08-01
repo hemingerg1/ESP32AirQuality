@@ -61,19 +61,18 @@ def getLastMessage():
 
 ################ garage door ################
 # closes garage door
-async def closeGarageDoor():
-    global Ldoor
-    if Ldoor.value() == 1:
-        uasyncio.create_task(sendTelegram('Closing garage door now...'))
+async def closeGarageDoor(door):
+    if door.value() == 1:
+        uasyncio.create_task(sendTelegram('Door is open. Closing it now.'))
         ####### TO DO: need to figure out hardware side to impliment closing the door ############
         c = 0
-        while Ldoor.value() == 1:
+        while door.value() == 1:
             if c >= 12:
                 uasyncio.create_task(sendTelegram('Garage door did not close succesfully. Timed out.'))
                 break
             await uasyncio.sleep(5)
             c += 1
-        if Ldoor.value() == 0:
+        if door.value() == 0:
             uasyncio.create_task(sendTelegram('Garage door closed successfully'))
     else:
         uasyncio.create_task(sendTelegram('Door already closed. Doing nothing.'))

@@ -133,7 +133,7 @@ async def get_data():
                 m = m.lower()
                 if m == 'c' and t > last_message_time and teleDoorClosing == False:
                     teleDoorClosing = True
-                    uasyncio.create_task(aqUtils.closeGarageDoor())
+                    uasyncio.create_task(aqUtils.closeGarageDoor(door=Ldoor))
                 last_message_time = t
         elif p.value() == 0 and data[f'{d}sat'] != 'closed':  # door just closed
             data[f'{d}sat'] = 'closed'
