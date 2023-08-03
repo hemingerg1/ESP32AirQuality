@@ -160,8 +160,13 @@ async def get_data():
         aq_alerted = False
 
     # send data to influxDB
-    if len(data['aq']) > 0:
-        uasyncio.create_task(influx.influxSend(f'Air Temperature={data["tempf"][-1]},AQ={data["aq"][-1]},GasRes={data["gas_res"]},PM25={data["pm25_env"][-1]}'))
+    try:
+        if len(data['aq']) > 0:
+            uasyncio.create_task(influx.influxSend(f'Air Temperature={data["tempf"][-1]},AQ={data["aq"][-1]},GasRes={data["gas_res"]},PM25={data["pm25_env"][-1]}'))
+        elif data['pm25_env'][-1] is not None:
+            uasyncio.create_task(influx.influxSend(f'Air Temperature={data["tempf"][-1]},GasRes={data["gas_res"]},PM25={data["pm25_env"][-1]}'))
+    except:
+        log.warn('Influx try failed.')
 
     return
 

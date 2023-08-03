@@ -12,7 +12,7 @@ async def influxSend(data):
 
     r = urequests.post(url=url, headers=header, data=data)
 
-    if 200 <= r.status_code < 300:
+    if r.status_code < 200 or r.status_code <= 300:
         log.warn(f'Influx post unsuccessful. Error: "{r.json()["code"]}"')
 
     r.close()
