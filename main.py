@@ -8,7 +8,6 @@ import bme680AQ
 import pms5003
 from microdot_asyncio import Microdot, Response, send_file
 import aqUtils
-import influx
 
 data_sample_time = const(60)  # frequency to take data readings, in seconds
 max_hist_length = const(120)  # max number of data point to keep time to wait before alerting of door remaining open, in number of data samplings
@@ -162,9 +161,9 @@ async def get_data():
     # send data to influxDB
     try:
         if len(data['aq']) > 0:
-            uasyncio.create_task(influx.influxSend(f'Air Temperature={data["tempf"][-1]},AQ={data["aq"][-1]},GasRes={data["gas_res"]},PM25={data["pm25_env"][-1]}'))
+            uasyncio.create_task(aqUtils.influxSend(f'Air Temperature={data["tempf"][-1]},AQ={data["aq"][-1]},GasRes={data["gas_res"]},PM25={data["pm25_env"][-1]}'))
         elif data['pm25_env'][-1] is not None:
-            uasyncio.create_task(influx.influxSend(f'Air Temperature={data["tempf"][-1]},GasRes={data["gas_res"]},PM25={data["pm25_env"][-1]}'))
+            uasyncio.create_task(aqUtils.influxSend(f'Air Temperature={data["tempf"][-1]},GasRes={data["gas_res"]},PM25={data["pm25_env"][-1]}'))
     except:
         log.warn('Influx try failed.')
 

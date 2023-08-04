@@ -112,3 +112,13 @@ def internet_check(log=log):
         log.warn('No internet connection. Attempting to reconnect now.')
         reconnect()
         log.info('WIFI reconnected')
+
+
+################ Influxdb ################
+async def influxSend(data):
+    r = urequests.post(url=secrets.INFLUX_URL, headers={'Authorization': secrets.INFLUX_TOKEN}, data=data)
+    if r.status_code < 200 or r.status_code <= 300:
+        log.warn(f'Influx post unsuccessful. Error: "{r.json()["code"]}"')
+    r.close()
+    gc.collect()
+    return

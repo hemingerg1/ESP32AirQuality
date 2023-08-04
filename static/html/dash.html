@@ -1,33 +1,33 @@
 <!DOCTYPE html>
 
 <html lang="en">
+
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">    
-    <title>Garage Monitor</title>
-    <link rel="icon" type="image/x-icon" href="static/images/favicon.png">
-    <link rel="stylesheet" href="static/css/style.css">
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Garage Monitor</title>
+  <link rel="icon" type="image/x-icon" href="static/images/favicon.png">
+  <link rel="stylesheet" href="static/css/style.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
 
 </head>
 
 <body>
-<div class="sidebar">
-  <a href="/">Home</a>
-  <a href="/sensors">All Sensors</a>
-  <a href="/dash">Network Dashboard</a>
-  <a href="/cam">Cameras</a>
-  <a href="/log">Log</a>
+  <div class="sidebar">
+    <a href="/">Home</a>
+    <a href="/sensors">All Sensors</a>
+    <a href="/dash">Network Dashboard</a>
+    <a href="/cam">Cameras</a>
+    <a href="/log">Log</a>
 
-  <div id="side_mem">
-    <label id="mem_meter_label" for="mem_meter"></label><br>
-    <meter id="mem_meter" min=0 max=1 high=0.75></meter>
+    <div id="side_mem">
+    </div>
   </div>
-</div>
 
-<div class="content">
-  <iframe src="http://10.222.5.129:89/" width="100%" height="100%" style="border:none;"></iframe>
-</div>
+  <div class="content">
+    <iframe src="http://10.222.5.129:89/" width="100%" height="100%" style="border:none;"></iframe>
+  </div>
 
 </body>
+
 </html>
