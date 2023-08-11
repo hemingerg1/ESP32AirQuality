@@ -105,58 +105,67 @@ async def get_data():
             data[r].pop(0)
 
     # check status of doors
-    for d, p in door_list.items():
-        if p.value() == 1 and data[f'{d}sat'] != 'open':  # door just opened
-            data[f'{d}sat'] = 'open'
-            data[f'{d}time'] = 0
-        # door has been open
-        elif p.value() == 1 and data[f'{d}sat'] == 'open':
-            data[f'{d}time'] += 1
-            if data[f'{d}time'] == door_alert_time:
-                if d == 'Ldoor':
+    try:
+        for d, p in door_list.items():
+            if p.value() == 1 and data[f'{d}sat'] != 'open':  # door just opened
+                data[f'{d}sat'] = 'open'
+                data[f'{d}time'] = 0
+            # door has been open
+            elif p.value() == 1 and data[f'{d}sat'] == 'open':
+                data[f'{d}time'] += 1
+                if data[f'{d}time'] == door_alert_time:
+                    if d == 'Ldoor':
+                        m, t = aqUtils.getLastMessage()
+                        last_message_time = t
+                        uasyncio.create_task(aqUtils.sendTelegram('LARGE GARAGE DOOR has been left open.  Reply "c" to close.'))
+                        await uasyncio.sleep(2)
+                    elif d == 'Sdoor':
+                        uasyncio.create_task(aqUtils.sendTelegram('SMALL GARAGE DOOR has been left open.'))
+                        await uasyncio.sleep(2)
+                    elif d == 'HOdoor':
+                        uasyncio.create_task(aqUtils.sendTelegram('GARAGE\'S OUTSIDE WALK-IN DOOR has been left open.'))
+                        await uasyncio.sleep(2)
+                    elif d == 'HIdoor':
+                        uasyncio.create_task(aqUtils.sendTelegram('GARAGE\'S INSIDE DOOR TO SHOP has been left open.'))
+                        await uasyncio.sleep(2)
+                # check for telegram request to close door
+                elif d == 'Ldoor' and data[f'{d}time'] > door_alert_time:
                     m, t = aqUtils.getLastMessage()
+                    m = m.lower()
+                    if m == 'c' and t > last_message_time and teleDoorClosing == False:
+                        teleDoorClosing = True
+                        uasyncio.create_task(aqUtils.closeGarageDoor(door=Ldoor))
                     last_message_time = t
-                    uasyncio.create_task(aqUtils.sendTelegram('LARGE GARAGE DOOR has been left open.  Reply "c" to close.'))
-                    await uasyncio.sleep(2)
-                elif d == 'Sdoor':
-                    uasyncio.create_task(aqUtils.sendTelegram('SMALL GARAGE DOOR has been left open.'))
-                    await uasyncio.sleep(2)
-                elif d == 'HOdoor':
-                    uasyncio.create_task(aqUtils.sendTelegram('GARAGE\'S OUTSIDE WALK-IN DOOR has been left open.'))
-                    await uasyncio.sleep(2)
-                elif d == 'HIdoor':
-                    uasyncio.create_task(aqUtils.sendTelegram('GARAGE\'S INSIDE DOOR TO SHOP has been left open.'))
-                    await uasyncio.sleep(2)
-            # check for telegram request to close door
-            elif d == 'Ldoor' and data[f'{d}time'] > door_alert_time:
-                m, t = aqUtils.getLastMessage()
-                m = m.lower()
-                if m == 'c' and t > last_message_time and teleDoorClosing == False:
-                    teleDoorClosing = True
-                    uasyncio.create_task(aqUtils.closeGarageDoor(door=Ldoor))
-                last_message_time = t
-        elif p.value() == 0 and data[f'{d}sat'] != 'closed':  # door just closed
-            data[f'{d}sat'] = 'closed'
-            data[f'{d}time'] = 0
-            teleDoorClosing = False
+            elif p.value() == 0 and data[f'{d}sat'] != 'closed':  # door just closed
+                data[f'{d}sat'] = 'closed'
+                data[f'{d}time'] = 0
+                teleDoorClosing = False
+    except:
+        log.warn('Door check failed')
 
     # send telegram alert if PM is too high
-    if data['pm25_env'][-1] is not None and data['pm25_env'][-1] > pm_alert_level:
-        if pm_alerted == False:
-            uasyncio.create_task(aqUtils.sendTelegram(
-                f'PM is high.  PM = {data["pm25_env"][-1]}'))
-            pm_alerted = True
-    elif data['pm25_env'][-1] is not None and data['pm25_env'][-1] < pm_alert_level - 5:
-        pm_alerted = False
+    try:
+        if data['pm25_env'][-1] is not None and data['pm25_env'][-1] > pm_alert_level:
+            if pm_alerted == False:
+                uasyncio.create_task(aqUtils.sendTelegram(
+                    f'PM is high.  PM = {data["pm25_env"][-1]}'))
+                pm_alerted = True
+        elif data['pm25_env'][-1] is not None and data['pm25_env'][-1] < pm_alert_level - 5:
+            pm_alerted = False
+    except:
+        log.warn('PM telegram alert failed')
 
     # send telegram alert if Air Quality is poor
-    if len(data['aq']) > 0 and data['aq'][-1] < aq_alert_level:
-        if aq_alerted == False:
-            uasyncio.create_task(aqUtils.sendTelegram(
-                f'Air Quality is poor.  AQ = {data["aq"][-1]}'))
-            aq_alerted = True
-    elif len(data['aq']) > 0 and data['aq'][-1] > aq_alert_level + 10:
-        aq_alerted = False
+    try:
+        if len(data['aq']) > 0 and data['aq'][-1] < aq_alert_level:
+            if aq_alerted == False:
+                uasyncio.create_task(aqUtils.sendTelegram(
+                    f'Air Quality is poor.  AQ = {data["aq"][-1]}'))
+                aq_alerted = True
+        elif len(data['aq']) > 0 and data['aq'][-1] > aq_alert_level + 10:
+            aq_alerted = False
+    except:
+        log.warn('AQ telegram alert failed')
 
     # send data to influxDB
     try:
@@ -228,7 +237,7 @@ async def tim(request):
 async def data_send(rquest):
     return data
 
-
+# after each request collect garbage
 @app.after_request
 async def mem_collect(request, response):
     gc.collect()
@@ -265,8 +274,11 @@ async def update_readings(data_sample_time=data_sample_time):
         await uasyncio.create_task(get_data())
         await uasyncio.sleep(data_sample_time)
         if l_count >= 20:
-            aqUtils.internet_check()
-            l_count = 0
+            try:
+                aqUtils.internet_check()
+                l_count = 0
+            except:
+                log.warn('Internet check failed')
 
 
 # create main async loop
