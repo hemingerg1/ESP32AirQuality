@@ -18,7 +18,7 @@ To run this project, you will need the following hardware components:
 - ESP32 microcontroller board
 - BME680 sensor module
 - PMS5003 sensor module
-- Door magnetic reed switchs ([such as these](https://www.amazon.com/Surface-Mounted-Magnetic-Contacts-Window/dp/B085CMPW5R))
+- Door magnetic reed switches ([such as these](https://www.amazon.com/Surface-Mounted-Magnetic-Contacts-Window/dp/B085CMPW5R))
 
 ## Software Requirements
 The project requires the following software dependencies:
@@ -47,7 +47,7 @@ The project requires the following software dependencies:
     | Door Sensors | 1 | GND |
     | Door Sensors | 2 | Any open GPIO (needs to be set in `main.py` for your specific use case) |  
     
-    If you would like to control a garage door opener you will need to figure out the hardware intgration on your own.
+    If you would like to control a garage door opener you will need to figure out the hardware integration on your own.
 
 1. Clone the project repository from GitHub:  
     ```
@@ -59,9 +59,9 @@ The project requires the following software dependencies:
 
 1. Modify IP address in `static/html/cam.html` if you have cameras you want to include.
 
-1. Modify IP addres in `static/html/dash.html` if you have a dashboard you want to include.
+1. Modify IP address in `static/html/dash.html` if you have a dashboard you want to include.
 
-1. Flash firware to ESP32.
+1. Flash firmware to ESP32.
 
 1. Flash `main.py`, `boot.py`, `secrets.py`, and the entire `static` directory to the ESP32.
 
@@ -83,7 +83,7 @@ Contributions to this project are welcome. If you find any issues or have sugges
 
 <details>
 <summary> License </summary>
-This project is licensed under the MIT License. Feel free to use, modify, and distribute the code for personal or commercial purposes.
+This project is licensed under the GNU General Public License. Feel free to use, modify, and distribute the code for personal or commercial purposes.
 </details>
 
 <details>
