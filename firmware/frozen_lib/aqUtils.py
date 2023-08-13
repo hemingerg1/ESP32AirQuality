@@ -114,7 +114,8 @@ def internet_check(log=log):
 async def influxSend(data):
     r = urequests.post(url=secrets.INFLUX_URL, headers={'Authorization': secrets.INFLUX_TOKEN}, data=data)
     if r.status_code < 200 or r.status_code <= 300:
-        log.warn(f'Influx post unsuccessful. Error: "{r.json()["code"]}"')
+        code = r.json()['code']
+        log.warn(f'Influx post unsuccessful. Error: "{code}"')
     r.close()
     gc.collect()
     return
