@@ -1,4 +1,4 @@
-from time import sleep
+from time import sleep, sleep_ms
 import network
 import secrets
 import ulogger
@@ -61,10 +61,12 @@ def getLastMessage():
 
 ################ garage door ################
 # closes garage door
-async def closeGarageDoor(door):
+async def closeGarageDoor(door, opener_pin):
     if door.value() == 1:
         uasyncio.create_task(sendTelegram('Door is open. Closing it now.'))
-        ####### TO DO: need to figure out hardware side to impliment closing the door ############
+        opener_pin.value(1)
+        sleep_ms(500)
+        opener_pin.value(0)
         c = 0
         while door.value() == 1:
             if c >= 12:

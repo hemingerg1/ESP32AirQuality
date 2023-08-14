@@ -46,6 +46,8 @@ Ldoor = Pin(23, Pin.IN, Pin.PULL_UP)
 Sdoor = Pin(22, Pin.IN, Pin.PULL_UP)
 HOdoor = Pin(21, Pin.IN, Pin.PULL_UP)
 HIdoor = Pin(19, Pin.IN, Pin.PULL_UP)
+# pin for garage door opener
+OpPin = Pin(18, Pin.OUT, value=0)
 
 
 data = {'tempc': 0, 'tempf': [], 'hum': [], 'pres': 0, 'gas_res': 0, 'aq': [],
@@ -134,7 +136,7 @@ async def get_data():
                     m = m.lower()
                     if m == 'c' and t > last_message_time and teleDoorClosing == False:
                         teleDoorClosing = True
-                        uasyncio.create_task(aqUtils.closeGarageDoor(door=Ldoor))
+                        uasyncio.create_task(aqUtils.closeGarageDoor(door=Ldoor, opener_pin=OpPin))
                     last_message_time = t
             elif p.value() == 0 and data[f'{d}sat'] != 'closed':  # door just closed
                 data[f'{d}sat'] = 'closed'
