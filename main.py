@@ -47,7 +47,7 @@ Sdoor = Pin(22, Pin.IN, Pin.PULL_UP)
 HOdoor = Pin(21, Pin.IN, Pin.PULL_UP)
 HIdoor = Pin(19, Pin.IN, Pin.PULL_UP)
 # pin for garage door opener
-OpPin = Pin(18, Pin.OUT, value=0)
+OpPin = Pin(15, Pin.OUT, value=0)
 
 
 data = {'tempc': 0, 'tempf': [], 'hum': [], 'pres': 0, 'gas_res': 0, 'aq': [],
