@@ -8,6 +8,8 @@ import bme680AQ
 import pms5003
 from microdot_asyncio import Microdot, Response, send_file
 import aqUtils
+from umqtt.simple import MQTTClient
+import secrets
 
 data_sample_time = const(60)  # frequency to take data readings, in seconds
 max_hist_length = const(120)  # max number of data point to keep time to wait before alerting of door remaining open, in number of data samplings
@@ -18,6 +20,8 @@ pm_alerted = False
 aq_alerted = False
 teleDoorClosing = False
 last_message_time = 0
+
+mq = MQTTClient(client_id = 'garageESP', server = secrets.MQTT_BROKER,  port = secrets.MQTT_port,  user = secrets.MQTT_USERNAME,  password = secrets.MQTT_PASSWORD)
 
 # Initialize Logger
 log = aqUtils.get_logger()
@@ -169,6 +173,22 @@ async def get_data():
     except:
         log.warn('AQ telegram alert failed')
 
+    # send data to MQTT broker
+    try:
+        mq.connect()
+        mq.publish(topic=b'Garage/Air/Temp', msg=str(data['tempf'][-1]).encode())
+        mq.publish(topic=b'Garage/Air/Humidity', msg=str(data['hum'][-1]).encode())
+        mq.publish(topic=b'Garage/Air/AQ', msg=str(data['aq'][-1]).encode())
+        mq.publish(topic=b'Garage/Air/PM25', msg=str(data['pm25_env'][-1]).encode())
+        mq.publish(topic=b'Garage/Doors/LargeGarageDoor', msg=str(data['Ldoorsat']).encode())
+        mq.publish(topic=b'Garage/Doors/SmallGarageDoor', msg=str(data['Sdoorsat']).encode())
+        mq.publish(topic=b'Garage/Doors/OutsideDoor', msg=str(data['HOdoorsat']).encode())
+        mq.publish(topic=b'Garage/Doors/ShopDoor', msg=str(data['HIdoorsat']).encode())
+        mq.disconnect()
+    except:
+        log.warn('MQTT try failed.')        
+
+    
     # send data to influxDB
     try:
         if len(data['aq']) > 0:
