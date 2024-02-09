@@ -21,7 +21,7 @@ aq_alerted = False
 teleDoorClosing = False
 last_message_time = 0
 
-mq = MQTTClient(client_id = 'garageESP', server = secrets.MQTT_BROKER,  port = secrets.MQTT_port,  user = secrets.MQTT_USERNAME,  password = secrets.MQTT_PASSWORD)
+mq = MQTTClient(client_id = b'garageESP', server = secrets.MQTT_BROKER,  port = secrets.MQTT_PORT,  user = secrets.MQTT_USERNAME,  password = secrets.MQTT_PASSWORD)
 
 # Initialize Logger
 log = aqUtils.get_logger()
@@ -177,17 +177,18 @@ async def get_data():
     try:
         mq.connect()
         mq.publish(topic=b'Garage/Air/Temp', msg=str(data['tempf'][-1]).encode())
-        mq.publish(topic=b'Garage/Air/Humidity', msg=str(data['hum'][-1]).encode())
-        mq.publish(topic=b'Garage/Air/AQ', msg=str(data['aq'][-1]).encode())
-        mq.publish(topic=b'Garage/Air/PM25', msg=str(data['pm25_env'][-1]).encode())
+        mq.publish(topic=b'Garage/Air/Humidity', msg=str(data['hum'][-1]).encode())        
         mq.publish(topic=b'Garage/Doors/LargeGarageDoor', msg=str(data['Ldoorsat']).encode())
         mq.publish(topic=b'Garage/Doors/SmallGarageDoor', msg=str(data['Sdoorsat']).encode())
         mq.publish(topic=b'Garage/Doors/OutsideDoor', msg=str(data['HOdoorsat']).encode())
         mq.publish(topic=b'Garage/Doors/ShopDoor', msg=str(data['HIdoorsat']).encode())
+        if len(data['aq']) > 0:
+            mq.publish(topic=b'Garage/Air/AQ', msg=str(data['aq'][-1]).encode())
+        if data['pm25_env'][-1] is not None:
+            mq.publish(topic=b'Garage/Air/PM25', msg=str(data['pm25_env'][-1]).encode())
         mq.disconnect()
     except:
-        log.warn('MQTT try failed.')        
-
+        log.warn('MQTT try failed.')
     
     # send data to influxDB
     try:
