@@ -54,6 +54,7 @@ HIdoor = Pin(19, Pin.IN, Pin.PULL_UP)
 OpPin = Pin(15, Pin.OUT, value=0)
 
 
+
 data = {'tempc': 0, 'tempf': [], 'hum': [], 'pres': 0, 'gas_res': 0, 'aq': [],
         'pm10_std': 0, 'pm25_std': 0, 'pm100_std': 0, 'pm10_env': [], 'pm25_env': [], 'pm100_env': [],
         'pm3': 0, 'pm5': 0, 'pm10': 0, 'pm25': 0, 'pm50': 0, 'pm100': 0,
@@ -176,8 +177,8 @@ async def get_data():
     # send data to MQTT broker
     try:
         mq.connect()
-        mq.publish(topic=b'Garage/Air/Temp', msg=str(data['tempf'][-1]).encode())
-        mq.publish(topic=b'Garage/Air/Humidity', msg=str(data['hum'][-1]).encode())        
+        mq.publish(topic=b'Garage/Air/Temp', msg=str(round(data['tempf'][-1])).encode())
+        mq.publish(topic=b'Garage/Air/Humidity', msg=str(round(data['hum'][-1])).encode())        
         mq.publish(topic=b'Garage/Doors/LargeGarageDoor', msg=str(data['Ldoorsat']).encode())
         mq.publish(topic=b'Garage/Doors/SmallGarageDoor', msg=str(data['Sdoorsat']).encode())
         mq.publish(topic=b'Garage/Doors/OutsideDoor', msg=str(data['HOdoorsat']).encode())
