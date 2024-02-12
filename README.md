@@ -10,7 +10,7 @@ This project is a MicroPython-based sensor monitoring and alert system that coll
 - Monitors the status of doors and sends alerts if they are left open for too long.
 - Sends Telegram alerts if PM levels or air quality drop below certain thresholds.
 - Provides a web interface for real-time monitoring of sensor readings.
-- Sends data to InfluxDB for long term data storage.
+- Sends sensor data to MQTT broker and InfluxDB for long term data storage.
 - Includes a clock synchronization feature to set the real-time clock (RTC) of the system.
 
 ## Hardware Requirements
