@@ -1,41 +1,42 @@
 <!DOCTYPE html>
 
 <html lang="en">
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">    
-    <title>Garage Monitor</title>
-    <link rel="icon" type="image/x-icon" href="static/images/favicon.png">
-    <link rel="stylesheet" href="static/css/style.css">
-    
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
 
-    <script src="static/js/warning_coloring.js"></script>
-    <script src="static/js/sensors.js"></script>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Garage Monitor</title>
+  <link rel="icon" type="image/x-icon" href="static/images/favicon.png">
+  <link rel="stylesheet" href="static/css/style.css">
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
+
+  <script src="static/js/warning_coloring.js"></script>
+  <script src="static/js/sensors.js"></script>
 
 </head>
 
 <body>
-<div class="sidebar">
-  <a href="/">Home</a>
-  <a href="/sensors">All Sensors</a>
-  <a href="/dash">Network Dashboard</a>
-  <a href="/cam">Cameras</a>
-  <a href="/log">Log</a>
+  <div class="sidebar">
+    <a href="/">Home</a>
+    <a href="/sensors">All Sensors</a>
+    <a href="/dash">Network Dashboard</a>
+    <a href="/cam">Cameras</a>
+    <a href="/log">Log</a>
 
-  <div id="side_mem">
-    <label id="mem_meter_label" for="mem_meter"></label><br>
-    <meter id="mem_meter" min=0 max=1 high=0.75></meter>
+    <div id="side_mem">
+      <label id="mem_meter_label" for="mem_meter"></label><br>
+      <meter id="mem_meter" min=0 max=1 high=0.75></meter>
+    </div>
   </div>
-</div>
 
-<div class="content">
+  <div class="content">
 
-   <div class="flex_current">
+    <div class="flex_current">
 
-     <div class="flex_box">
-       <div class="box-topic">PMS5003</div>
-       <div class="box_table">
+      <div class="flex_box">
+        <div class="box-topic">PMS5003</div>
+        <div class="box_table">
           <table>
             <tr>
               <th colspan=2>PM Standardized<br>( &microg / m<sup>3</sup> )</th>
@@ -53,9 +54,9 @@
               <td class="pm100" id="pm100_std"></td>
             </tr>
           </table>
-       </div>
+        </div>
 
-       <div class="box_table">
+        <div class="box_table">
           <table>
             <tr>
               <th colspan=2>PM Environmental<br>( &microg / m<sup>3</sup> )</th>
@@ -73,9 +74,9 @@
               <td class="pm100" id="pm100_env"></td>
             </tr>
           </table>
-       </div>
-    
-       <div class="box_table">
+        </div>
+
+        <div class="box_table">
           <table>
             <tr>
               <th colspan=2>Particle Counts<br>( number / 0.1L )</th>
@@ -105,84 +106,96 @@
               <td id="pm100"></td>
             </tr>
           </table>
-       </div>
-     </div>
+        </div>
+      </div>
 
-     <div class="flex_box">
-       <div class="box-topic">BME680</div>
+      <div class="flex_box">
+        <div class="box-topic">BME680</div>
         <div class="box_table">
-           <table>
-               <tr>
-                   <th colspan=2>Sensor Readings</th>
-               </tr>
-               <tr>
-                   <td>Temperature</td>
-                   <td id="tempc"></td>
-               </tr>
-               <tr>
-                   <td>Humidity</td>
-                   <td id="hum"></td>
-               </tr>
-               <tr>
-                   <td>Pressure</td>
-                   <td id="press"></td>
-               </tr>
-               <tr>
-                   <td>Gas Resistance</td>
-                   <td id="gas_res"></td>
-               </tr>
-           </table>
+          <table>
+            <tr>
+              <th colspan=2>Sensor Readings</th>
+            </tr>
+            <tr>
+              <td>Temperature</td>
+              <td id="tempc"></td>
+            </tr>
+            <tr>
+              <td>Humidity</td>
+              <td id="hum"></td>
+            </tr>
+            <tr>
+              <td>Pressure</td>
+              <td id="press"></td>
+            </tr>
+            <tr>
+              <td>Gas Resistance</td>
+              <td id="gas_res"></td>
+            </tr>
+          </table>
         </div>
 
         <div class="box_table">
-            <table>
-                <tr>
-                    <th colspan=2>Calculated Data</th>
-                </tr>
-                <tr>
-                    <td>Temperature</td>
-                    <td id="tempf"></td>
-                </tr>
-                <tr>
-                    <td>Air Quality</td>
-                    <td id="aq"></td>
-                </tr>
-            </table>
+          <table>
+            <tr>
+              <th colspan=2>Calculated Data</th>
+            </tr>
+            <tr>
+              <td>Temperature</td>
+              <td id="tempf"></td>
+            </tr>
+            <tr>
+              <td>Air Quality</td>
+              <td id="aq"></td>
+            </tr>
+          </table>
         </div>
-     </div>
-          
+      </div>
 
-     <div class="flex_box">
-         <div class="box-topic">Garage Status</div>
-         <div class="box_table">
-             <table>
-                 <tr>
-                     <th colspan=2>Doors</th>
-                 </tr>
-                 <tr>
-                     <td>Large Garage Door</td>
-                     <td id="LGdoor"></td>
-                 </tr>
-                 <tr>
-                     <td>Small Garage Door</td>
-                     <td id="SGdoor"></td>
-                 </tr>
-                 <tr>
-                     <td>Outside Walk-in Door</td>
-                     <td id="OWdoor"></td>
-                 </tr>
-                 <tr>
-                     <td>Inside Shop Door</td>
-                     <td id="ISdoor"></td>
-                 </tr>
-             </table>
-         </div>
-     </div>
 
-   </div>
+      <div class="flex_box">
+        <div class="box-topic">Generic Sensors</div>
+        <div class="box_table">
+          <table>
+            <tr>
+              <th colspan=2>Door Sensors</th>
+            </tr>
+            <tr>
+              <td>Large Garage Door</td>
+              <td id="LGdoor"></td>
+            </tr>
+            <tr>
+              <td>Small Garage Door</td>
+              <td id="SGdoor"></td>
+            </tr>
+            <tr>
+              <td>Outside Walk-in Door</td>
+              <td id="OWdoor"></td>
+            </tr>
+            <tr>
+              <td>Inside Shop Door</td>
+              <td id="ISdoor"></td>
+            </tr>
+          </table>
+        </div>
+        <div class="box_table">
+          <table>
+            <tr>
+              <th colspan=2>Temp Sensors</th>
+            </tr>
+            <tr>
+              <td>Outside Air Temp</td>
+              <td id="oTempF"></td>
+            </tr>
+          </table>
+        </div>
+      </div>
 
-</div>
+    </div>
+
+  </div>
 
 
 </body>
+
 </html>

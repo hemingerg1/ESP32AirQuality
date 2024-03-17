@@ -1,4 +1,5 @@
-from machine import Pin, SoftI2C, UART, RTC
+from machine import Pin, SoftI2C, UART, RTC, ADC
+import math
 from micropython import const
 import uasyncio
 import gc
@@ -11,7 +12,7 @@ import aqUtils
 from umqtt.simple import MQTTClient
 import secrets
 
-data_sample_time = const(60)  # frequency to take data readings, in seconds
+data_sample_time = const(30)  # frequency to take data readings, in seconds
 max_hist_length = const(120)  # max number of data point to keep time to wait before alerting of door remaining open, in number of data samplings
 door_alert_time = const(15)
 pm_alert_level = const(50)  # if pm2.5 goes above this, sends telegram alert if air quality drops below this, sends telegram alert
@@ -20,6 +21,13 @@ pm_alerted = False
 aq_alerted = False
 teleDoorClosing = False
 last_message_time = 0
+
+# Thermistor constants (thermistor should be connected to +3.3v and series resistor connected to ground)
+Rs = const(9880)  # Series Resistance in Ohms
+R0 = const(10000)  # Resistor value in Ohms
+B = const(3977)  # Thermistor Beta value
+T0 = const(298.15)  # Reference temperature in Kelvin
+
 
 mq = MQTTClient(client_id = b'garageESP', server = secrets.MQTT_BROKER,  port = secrets.MQTT_PORT,  user = secrets.MQTT_USERNAME,  password = secrets.MQTT_PASSWORD)
 
@@ -51,11 +59,14 @@ Sdoor = Pin(22, Pin.IN, Pin.PULL_UP)
 HOdoor = Pin(21, Pin.IN, Pin.PULL_UP)
 HIdoor = Pin(19, Pin.IN, Pin.PULL_UP)
 # pin for garage door opener
-OpPin = Pin(15, Pin.OUT, value=0)
+OpPin = Pin(33, Pin.OUT, value=1)
+# pin for outside temp thermistor
+OTpin = ADC(Pin(34, mode=Pin.IN))
+OTpin.atten(ADC.ATTN_11DB)         # 11dB attenuation (150mV - 2450mV)
 
 
 
-data = {'tempc': 0, 'tempf': [], 'hum': [], 'pres': 0, 'gas_res': 0, 'aq': [],
+data = {'tempc': 0, 'tempf': [], 'thermR': 0, 'oTempF': 0, 'hum': [], 'pres': 0, 'gas_res': 0, 'aq': [],
         'pm10_std': 0, 'pm25_std': 0, 'pm100_std': 0, 'pm10_env': [], 'pm25_env': [], 'pm100_env': [],
         'pm3': 0, 'pm5': 0, 'pm10': 0, 'pm25': 0, 'pm50': 0, 'pm100': 0,
         'mem_used': 0, 'mem_free': 0, 'mem_tot': 0, 'mem_usedp': [], 'time': [],
@@ -73,6 +84,18 @@ async def get_data():
 
     data['tempc'] = round(bme.temperature, 2) + temp_offset
     data['tempf'].append(round((data['tempc'] * (9/5)) + 32, 1))
+
+    # calc outside temp from thermistor
+    v = 0
+    for i in range(5):
+        v += OTpin.read_uv()/1000000
+        time.sleep_ms(20)
+    v = v / 5  # avg ADC reading in volts
+    if v != 0:
+        data['thermR'] = Rs * ((3.3 / v) - 1)  # resistance of thermistor
+        t = 1 / ((1/T0) + ((1/B) * (math.log(data['thermR']/R0))))  # calc temp in kelvin
+        data['oTempF'] = round(((t-273.15) * (9/5)) + 32, 1)
+    
     data['hum'].append(round(bme.humidity, 1))
     data['pres'] = round(bme.pressure/1000, 2)
     data['gas_res'] = bme.gas
@@ -178,7 +201,8 @@ async def get_data():
     try:
         mq.connect()
         mq.publish(topic=b'Garage/Air/Temp', msg=str(round(data['tempf'][-1])).encode())
-        mq.publish(topic=b'Garage/Air/Humidity', msg=str(round(data['hum'][-1])).encode())        
+        mq.publish(topic=b'Garage/Air/Humidity', msg=str(round(data['hum'][-1])).encode())  
+        mq.publish(topic=b"Garage/Air/OutTemp", msg=str(round(data['oTempF'])).encode())      
         mq.publish(topic=b'Garage/Doors/LargeGarageDoor', msg=str(data['Ldoorsat']).encode())
         mq.publish(topic=b'Garage/Doors/SmallGarageDoor', msg=str(data['Sdoorsat']).encode())
         mq.publish(topic=b'Garage/Doors/OutsideDoor', msg=str(data['HOdoorsat']).encode())
@@ -194,9 +218,9 @@ async def get_data():
     # send data to influxDB
     try:
         if len(data['aq']) > 0:
-            uasyncio.create_task(aqUtils.influxSend(f'Air Temperature={data["tempf"][-1]},Humidity={data["hum"][-1]},AQ={data["aq"][-1]},GasRes={data["gas_res"]},PM25={data["pm25_env"][-1]}'))
+            uasyncio.create_task(aqUtils.influxSend(f'Air Temperature={data["tempf"][-1]},Humidity={data["hum"][-1]},OutAirThermRes={data["thermR"]},OutAirTemp={data["oTempF"]},AQ={data["aq"][-1]},GasRes={data["gas_res"]},PM25={data["pm25_env"][-1]}'))
         elif data['pm25_env'][-1] is not None:
-            uasyncio.create_task(aqUtils.influxSend(f'Air Temperature={data["tempf"][-1]},Humidity={data["hum"][-1]},GasRes={data["gas_res"]},PM25={data["pm25_env"][-1]}'))
+            uasyncio.create_task(aqUtils.influxSend(f'Air Temperature={data["tempf"][-1]},Humidity={data["hum"][-1]},OutAirThermRes={data["thermR"]},OutAirTemp={data["oTempF"]},GasRes={data["gas_res"]},PM25={data["pm25_env"][-1]}'))
     except:
         log.warn('Influx try failed.')
 
@@ -273,6 +297,13 @@ async def shutdown(request):
     request.app.shutdown()
     log.info('Server shutdown by /shutdown route')
     return 'The server is shutting down...'
+
+# restart the machine
+@app.route('/restart', methods=['POST'])
+async def restart(request):
+    log.info('Server restart by /restart route')
+    import machine
+    machine.reset()
 
 
 # sends the static files (html,css,javascript)

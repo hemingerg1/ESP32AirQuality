@@ -64,9 +64,9 @@ def getLastMessage():
 async def closeGarageDoor(door, opener_pin):
     if door.value() == 1:
         uasyncio.create_task(sendTelegram('Door is open. Closing it now.'))
-        opener_pin.value(1)
-        sleep_ms(500)
         opener_pin.value(0)
+        sleep_ms(500)
+        opener_pin.value(1)
         c = 0
         while door.value() == 1:
             if c >= 12:
@@ -102,8 +102,8 @@ def reconnect():
 
 
 def internet_check(log=log):
-    r = urequests.get('https://www.google.com')
-    if r.status_code == 200:
+    r = urequests.get('https://api.telegram.org')
+    if r.status_code >= 200:
         r.close()
     else:
         r.close()

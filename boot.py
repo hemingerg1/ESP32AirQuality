@@ -12,7 +12,7 @@ ap.active(False)
 aqUtils.do_connect()
 
 try:
-    ntptime.host = 'time.google.com'
+    ntptime.host = 'time1.google.com'
     t = ntptime.time()    
     tm = utime.gmtime(t)
     machine.RTC().datetime((tm[0], tm[1], tm[2], tm[6] + 1, tm[3] - timeZoneOffset, tm[4], tm[5], 0))
