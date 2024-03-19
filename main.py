@@ -200,9 +200,9 @@ async def get_data():
     # send data to MQTT broker
     try:
         mq.connect()
-        mq.publish(topic=b'Garage/Air/Temp', msg=str(round(data['tempf'][-1])).encode())
+        mq.publish(topic=b'Garage/Air/Temp', msg=str(data['tempf'][-1]).encode())
         mq.publish(topic=b'Garage/Air/Humidity', msg=str(round(data['hum'][-1])).encode())  
-        mq.publish(topic=b"Garage/Air/OutTemp", msg=str(round(data['oTempF'])).encode())      
+        mq.publish(topic=b"Garage/Air/OutTemp", msg=str(data['oTempF']).encode())      
         mq.publish(topic=b'Garage/Doors/LargeGarageDoor', msg=str(data['Ldoorsat']).encode())
         mq.publish(topic=b'Garage/Doors/SmallGarageDoor', msg=str(data['Sdoorsat']).encode())
         mq.publish(topic=b'Garage/Doors/OutsideDoor', msg=str(data['HOdoorsat']).encode())
@@ -304,7 +304,7 @@ async def restart(request):
     log.info('Server restart by /restart route')
     import machine
     machine.reset()
-
+    return 'nothing'
 
 # sends the static files (html,css,javascript)
 @app.route('/static/<path:path>')

@@ -144,6 +144,7 @@ $(function () {
 		$("#mem_meter").val(jsonData.mem_usedp.at(-1));
 
 		// update boxes at top of page
+		$("#oTemp").text(jsonData.oTempF + "  F");
 		$("#temp").text(jsonData.tempf.at(-1) + "  F");
 		$("#hum").text(jsonData.hum.at(-1) + "  %");
 		$("#aq").text(jsonData.aq.at(-1));
