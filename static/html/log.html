@@ -27,7 +27,7 @@
     <button onclick="location.href='/clock'" type="button">
       Change Clock
     </button>
-    <button id="restart" type="button">
+    <button onclick="location.href='/restart'" type="button">
       Restart ESP32
     </button>
 
@@ -40,19 +40,5 @@
 
 </body>
 
-
-<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-<script type=text/javascript>
-        $(function() {
-          $('#restart').on('click', function(e) {
-            e.preventDefault()
-            $.getJSON('/restart',
-                function(data) {
-              //do nothing
-            });
-            return false;
-          });
-        });
-</script>
 
 </html>

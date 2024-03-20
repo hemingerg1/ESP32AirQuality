@@ -27,6 +27,7 @@ Rs = const(9880)  # Series Resistance in Ohms
 R0 = const(10000)  # Resistor value in Ohms
 B = const(3977)  # Thermistor Beta value
 T0 = const(298.15)  # Reference temperature in Kelvin
+Therm_offset = -1.5  # offset for calibration
 
 
 mq = MQTTClient(client_id = b'garageESP', server = secrets.MQTT_BROKER,  port = secrets.MQTT_PORT,  user = secrets.MQTT_USERNAME,  password = secrets.MQTT_PASSWORD)
@@ -43,8 +44,8 @@ bme_i2c = SoftI2C(scl=Pin(27), sda=Pin(26))
 bme = bme680.BME680_I2C(i2c=bme_i2c)
 # Initialize IAQ calculator
 iaq_tracker = bme680AQ.IAQTracker(burn_in_cycles=100)
-# applies an offset to BME680 temperature reading for calibration
-temp_offset = -3.3
+# applies an offset to BME680 temperature reading for calibration (in C)
+temp_offset = -1.5
 
 # Intialize PMS5003
 pms_uart = UART(1, tx=14, rx=25, baudrate=9600)
@@ -87,14 +88,14 @@ async def get_data():
 
     # calc outside temp from thermistor
     v = 0
-    for i in range(5):
+    for i in range(8):
         v += OTpin.read_uv()/1000000
-        time.sleep_ms(20)
-    v = v / 5  # avg ADC reading in volts
+        time.sleep_ms(25)
+    v = v / 8  # avg ADC reading in volts
     if v != 0:
         data['thermR'] = Rs * ((3.3 / v) - 1)  # resistance of thermistor
         t = 1 / ((1/T0) + ((1/B) * (math.log(data['thermR']/R0))))  # calc temp in kelvin
-        data['oTempF'] = round(((t-273.15) * (9/5)) + 32, 1)
+        data['oTempF'] = round(((t+Therm_offset-273.15) * (9/5)) + 32, 1)
     
     data['hum'].append(round(bme.humidity, 1))
     data['pres'] = round(bme.pressure/1000, 2)
@@ -226,6 +227,12 @@ async def get_data():
 
     return
 
+async def rStart():
+    log.info('Server restart by /restart route')
+    await uasyncio.sleep(2)
+    import machine
+    machine.reset()
+
 
 ###### Microdot web pages ######
 @app.route('/')
@@ -285,6 +292,13 @@ async def tim(request):
 async def data_send(rquest):
     return data
 
+# restart the machine
+@app.route('/closeDoor')
+async def c_door(request):
+    log.info('Web server requested to close door')
+    uasyncio.create_task(aqUtils.closeGarageDoor(door=Ldoor, opener_pin=OpPin))
+    return 'nothing'
+
 # after each request collect garbage
 @app.after_request
 async def mem_collect(request, response):
@@ -299,12 +313,10 @@ async def shutdown(request):
     return 'The server is shutting down...'
 
 # restart the machine
-@app.route('/restart', methods=['POST'])
-async def restart(request):
-    log.info('Server restart by /restart route')
-    import machine
-    machine.reset()
-    return 'nothing'
+@app.route('/restart')
+async def rest(request):
+    uasyncio.create_task(rStart())
+    return 'The server is restarting...'
 
 # sends the static files (html,css,javascript)
 @app.route('/static/<path:path>')
@@ -324,7 +336,7 @@ async def logf(request):
 # create async loop to update data
 async def update_readings(data_sample_time=data_sample_time):
     l_count = 0
-    while True:
+    while True:            
         l_count += 1
         await uasyncio.create_task(get_data())
         await uasyncio.sleep(data_sample_time)

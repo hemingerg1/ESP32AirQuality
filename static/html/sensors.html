@@ -181,6 +181,17 @@
         <div class="box_table">
           <table>
             <tr>
+              <th colspan=2>Door Controls</th>
+            </tr>
+            <tr>
+              <td>Large Garage Door</td>
+              <td><button id="doorClose" type="button">Close</button></td>
+            </tr>
+          </table>
+        </div>
+        <div class="box_table">
+          <table>
+            <tr>
               <th colspan=2>Temp Sensors</th>
             </tr>
             <tr>
@@ -197,5 +208,20 @@
 
 
 </body>
+
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script type=text/javascript>
+        $(function() {
+          $('#doorClose').on('click', function(e) {
+            e.preventDefault()
+            $.getJSON('/closeDoor',
+                function(data) {
+              //do nothing
+            });
+            return false;
+          });
+        });
+</script>
 
 </html>
