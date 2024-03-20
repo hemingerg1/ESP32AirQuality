@@ -60,6 +60,7 @@ Sdoor = Pin(22, Pin.IN, Pin.PULL_UP)
 HOdoor = Pin(21, Pin.IN, Pin.PULL_UP)
 HIdoor = Pin(19, Pin.IN, Pin.PULL_UP)
 # pin for garage door opener
+OpEnable = Pin(15, Pin.OUT, value=0)
 OpPin = Pin(33, Pin.OUT, value=1)
 # pin for outside temp thermistor
 OTpin = ADC(Pin(34, mode=Pin.IN))
@@ -165,7 +166,7 @@ async def get_data():
                     m = m.lower()
                     if m == 'c' and t > last_message_time and teleDoorClosing == False:
                         teleDoorClosing = True
-                        uasyncio.create_task(aqUtils.closeGarageDoor(door=Ldoor, opener_pin=OpPin))
+                        uasyncio.create_task(aqUtils.closeGarageDoor(door=Ldoor, opener_pin=OpPin, relay_enable_pin=OpEnable))
                     last_message_time = t
             elif p.value() == 0 and data[f'{d}sat'] != 'closed':  # door just closed
                 data[f'{d}sat'] = 'closed'
@@ -296,7 +297,7 @@ async def data_send(rquest):
 @app.route('/closeDoor')
 async def c_door(request):
     log.info('Web server requested to close door')
-    uasyncio.create_task(aqUtils.closeGarageDoor(door=Ldoor, opener_pin=OpPin))
+    uasyncio.create_task(aqUtils.closeGarageDoor(door=Ldoor, opener_pin=OpPin, relay_enable_pin=OpEnable))
     return 'nothing'
 
 # after each request collect garbage

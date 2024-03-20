@@ -61,12 +61,14 @@ def getLastMessage():
 
 ################ garage door ################
 # closes garage door
-async def closeGarageDoor(door, opener_pin):
+async def closeGarageDoor(door, opener_pin, relay_enable_pin):
     if door.value() == 1:
+        relay_enable_pin.value(1)
         uasyncio.create_task(sendTelegram('Door is open. Closing it now.'))
         opener_pin.value(0)
         sleep_ms(500)
         opener_pin.value(1)
+        relay_enable_pin.value(0)
         c = 0
         while door.value() == 1:
             if c >= 12:
