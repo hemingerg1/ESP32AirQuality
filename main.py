@@ -27,7 +27,7 @@ Rs = const(9880)  # Series Resistance in Ohms
 R0 = const(10000)  # Resistor value in Ohms
 B = const(3977)  # Thermistor Beta value
 T0 = const(298.15)  # Reference temperature in Kelvin
-Therm_offset = -1.5  # offset for calibration
+Therm_offset = -1.75  # offset for calibration
 
 
 mq = MQTTClient(client_id = b'garageESP', server = secrets.MQTT_BROKER,  port = secrets.MQTT_PORT,  user = secrets.MQTT_USERNAME,  password = secrets.MQTT_PASSWORD)
@@ -45,7 +45,7 @@ bme = bme680.BME680_I2C(i2c=bme_i2c)
 # Initialize IAQ calculator
 iaq_tracker = bme680AQ.IAQTracker(burn_in_cycles=100)
 # applies an offset to BME680 temperature reading for calibration (in C)
-temp_offset = -1.5
+temp_offset = -0.5
 
 # Intialize PMS5003
 pms_uart = UART(1, tx=14, rx=25, baudrate=9600)
